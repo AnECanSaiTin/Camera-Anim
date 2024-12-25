@@ -1,5 +1,6 @@
 package cn.anecansaitin.cameraanim.common.animation;
 
+import cn.anecansaitin.cameraanim.client.TrackCache;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.joml.Vector3f;
 
@@ -7,12 +8,21 @@ import java.util.ArrayList;
 
 /// 全局相机轨迹
 public class GlobalCameraTrack {
+    public static final GlobalCameraTrack NULL = new NullTrack();
     private final ArrayList<CameraPoint> points;
     private final IntArrayList timeLine;
+    private final String id;
 
-    public GlobalCameraTrack() {
+    public GlobalCameraTrack(String id) {
         points = new ArrayList<>();
         timeLine = new IntArrayList();
+        this.id = id;
+    }
+
+    private GlobalCameraTrack(ArrayList<CameraPoint> points, IntArrayList timeLine, String id) {
+        this.points = points;
+        this.timeLine = timeLine;
+        this.id = id;
     }
 
     /// 把点加入到指定时间
@@ -50,6 +60,19 @@ public class GlobalCameraTrack {
                 updateBezier(left);
             }
         }
+    }
+
+    public void add(CameraPoint point) {
+        int index = points.size();
+        points.add(point);
+
+        if (index > 0) {
+            timeLine.add(timeLine.getInt(index - 1) + 20);
+        } else {
+            timeLine.add(0);
+        }
+
+        updateBezier(index);
     }
 
     /// 更新控制点
@@ -102,5 +125,40 @@ public class GlobalCameraTrack {
 
     public int getCount() {
         return points.size();
+    }
+
+    public String getId() {
+        return id;
+    }
+    public GlobalCameraTrack resetID(String id) {
+        return new GlobalCameraTrack(points, timeLine, id);
+    }
+
+    private static class NullTrack extends GlobalCameraTrack {
+        public NullTrack() {
+            super("null");
+        }
+
+        @Override
+        public void add(int time, CameraPoint point) {
+        }
+
+        @Override
+        public void add(CameraPoint point) {
+        }
+
+        @Override
+        public void remove(int index) {
+        }
+
+        @Override
+        public CameraPoint getPoint(int index) {
+            return CameraPoint.NULL;
+        }
+
+        @Override
+        public int getTime(int index) {
+            return 0;
+        }
     }
 }

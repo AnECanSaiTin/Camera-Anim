@@ -1,18 +1,19 @@
 package cn.anecansaitin.cameraanim.common.animation;
 
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /// 相机点位
 public class CameraPoint {
-    // 基础信息
+    public static final CameraPoint NULL = new CameraPoint(new Vector3f(Float.MIN_VALUE), new Quaternionf(), 0, PointInterpolationType.STEP);
     private final Vector3f position;
-    private final Vector3f rotation;
+    private final Quaternionf rotation;
     private float fov;
     private PointInterpolationType type;
     private final Vector3f leftBezierControl;
     private final Vector3f rightBezierControl;
 
-    public CameraPoint(Vector3f position, Vector3f rotation, float fov, PointInterpolationType type) {
+    public CameraPoint(Vector3f position, Quaternionf rotation, float fov, PointInterpolationType type) {
         this.position = position;
         this.rotation = rotation;
         this.fov = fov;
@@ -29,12 +30,8 @@ public class CameraPoint {
         position.set(x, y, z);
     }
 
-    public Vector3f getRotation() {
+    public Quaternionf getRotation() {
         return rotation;
-    }
-
-    public void setRotation(float x, float y, float z) {
-        rotation.set(x, y, z);
     }
 
     public float getFov() {
