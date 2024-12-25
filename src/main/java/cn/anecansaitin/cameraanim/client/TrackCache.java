@@ -10,6 +10,7 @@ import org.joml.Vector3f;
 public class TrackCache {
     public static boolean EDIT;
     public static boolean VIEW;
+    public static Mode MODE = Mode.MOVE;
     private static GlobalCameraTrack TRACK = GlobalCameraTrack.NULL;
     private static final SelectedPoint SELECTED_POINT = new SelectedPoint();
 
@@ -45,7 +46,7 @@ public class TrackCache {
         b4.getLeftBezierControl().add(-1, 1, -1);
     }
 
-    public static void select(Vector3f origin, Vector3f direction, float length) {
+    public static void pick(Vector3f origin, Vector3f direction, float length) {
         length += 0.1f;
         length *= length;
         int selectedIndex = SELECTED_POINT.getPointIndex();
@@ -142,5 +143,9 @@ public class TrackCache {
         LEFT,
         RIGHT,
         NONE
+    }
+
+    public enum Mode {
+        MOVE
     }
 }

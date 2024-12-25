@@ -30,7 +30,7 @@ public class MouseClick {
             // 左键
             Vector3f view = player.getViewVector(deltaTicks).toVector3f();
             Vector3f eye = player.getEyePosition(deltaTicks).toVector3f();
-            TrackCache.select(eye, view, (float) player.entityInteractionRange());
+            TrackCache.pick(eye, view, (float) player.entityInteractionRange());
         } else if (event.getKeyMapping() == options.keyUse) {
             // 右键
         }

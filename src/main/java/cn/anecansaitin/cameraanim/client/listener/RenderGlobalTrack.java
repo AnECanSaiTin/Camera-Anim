@@ -49,7 +49,7 @@ public class RenderGlobalTrack {
         TrackCache.SelectedPoint selected = getSelectedPoint();
 
         // 线条
-        renderLine(selected, bufferSource, last, CAMERA_CACHE);
+        renderLines(selected, bufferSource, last, CAMERA_CACHE);
 
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_FILLED_BOX);
         // 点
@@ -63,6 +63,128 @@ public class RenderGlobalTrack {
         RenderSystem.disableDepthTest();
     }
 
+    private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose, Vector3f cameraPos) {
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
+        // 轨迹
+        renderTrackLine(selected, buffer, pose, cameraPos);
+        // 贝塞尔曲线控制点连接线
+        renderBezierLine(selected, buffer, pose, cameraPos);
+
+        switch (MODE) {
+            case MOVE -> // 移动线
+                    renderMoveLine(selected, buffer, pose, cameraPos);
+        }
+
+        bufferSource.endBatch(RenderType.LINES);
+    }
+
+    // 使用vCache1、vCache2、vCache3、vCache4
+    private static void renderTrackLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+        GlobalCameraTrack track = getTrack();
+
+        if (track.getCount() > 2) {
+            for (int i = 1, c = track.getCount(); i < c; i++) {
+                CameraPoint p1 = track.getPoint(i - 1);
+                CameraPoint p2 = track.getPoint(i);
+                final Vector3f v1 = vCache1.set(p1.getPosition()).sub(cameraPos);
+                final Vector3f v2 = vCache2.set(p2.getPosition()).sub(cameraPos);
+
+                switch (p2.getType()) {
+                    case LINEAR -> addLine(buffer, last, v1, v2, 0xffffffff);
+                    case SMOOTH -> {
+                        Vector3f v0;
+                        Vector3f v3;
+
+                        if (i > 1) {
+                            CameraPoint p = track.getPoint(i - 2);
+                            v0 = vCache3.set(p.getPosition()).sub(cameraPos);
+                        } else {
+                            v0 = v1;
+                        }
+
+                        if (i < c - 1) {
+                            CameraPoint p = track.getPoint(i + 1);
+                            v3 = vCache4.set(p.getPosition()).sub(cameraPos);
+                        } else {
+                            v3 = v2;
+                        }
+
+                        addSmoothLine(buffer, last, v0, v1, v2, v3, 0xffffffff);
+                    }
+                    case BEZIER ->
+                            addBezierLine(buffer, last, v1, vCache3.set(p1.getRightBezierControl()).sub(cameraPos), vCache4.set(p2.getLeftBezierControl()).sub(cameraPos), v2, 0xffffffff);
+                    case STEP -> addLine(buffer, last, v1, v2, 0xff7f7f7f);
+                }
+            }
+        }
+    }
+
+    // 使用vCache1、vCache2
+    private static void renderMoveLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+        GlobalCameraTrack track = getTrack();
+        int selectedIndex = selected.getPointIndex();
+
+        if (selectedIndex < 0) {
+            return;
+        }
+
+        // 选中后显示移动用箭头的线
+        Vector3f pos;
+
+        switch (selected.getControl()) {
+            case LEFT -> {
+                CameraPoint selectedPoint = track.getPoint(selectedIndex);
+                pos = vCache1.set(selectedPoint.getLeftBezierControl());
+            }
+            case RIGHT -> {
+                CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
+                pos = vCache1.set(selectedPoint.getRightBezierControl());
+            }
+            case NONE -> {
+                CameraPoint selectedPoint = track.getPoint(selectedIndex);
+                pos = vCache1.set(selectedPoint.getPosition());
+            }
+            case null, default -> pos = vCache1.zero();
+        }
+
+        pos.sub(cameraPos);
+
+        // x轴
+        Vector3f axis = vCache2.set(pos).add(1, 0, 0);
+        addLine(buffer, last, pos, axis, 0xffff1242);
+        // y轴
+        axis.add(-1, 1, 0);
+        addLine(buffer, last, pos, axis, 0xff23d400);
+        // z轴
+        axis.add(0, -1, 1);
+        addLine(buffer, last, pos, axis, 0xff0894ed);
+    }
+
+    // 使用vCache1、vCache2
+    private static void renderBezierLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+        int selectedIndex = selected.getPointIndex();
+        GlobalCameraTrack track = getTrack();
+
+        if (selectedIndex <= 0) {
+            return;
+        }
+
+        //渲染被选中点的额外线条（贝塞尔控制点连接线）
+        CameraPoint selectedPoint = track.getPoint(selectedIndex);
+
+        if (selectedPoint.getType() != PointInterpolationType.BEZIER) {
+            return;
+        }
+
+        Vector3f selectedPos = vCache1.set(selectedPoint.getPosition()).sub(cameraPos);
+        Vector3f left = vCache2.set(selectedPoint.getLeftBezierControl()).sub(cameraPos);
+        addLine(buffer, last, selectedPos, left, 0x7f98FB98);
+        CameraPoint pre = track.getPoint(selectedIndex - 1);
+        Vector3f prePos = vCache1.set(pre.getPosition()).sub(cameraPos);
+        Vector3f right = vCache2.set(pre.getRightBezierControl()).sub(cameraPos);
+        addLine(buffer, last, prePos, right, 0x7f98FB98);
+    }
+    // 使用vCache1
     private static void renderArrowhead(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
         int selectedIndex = selected.getPointIndex();
 
@@ -151,99 +273,6 @@ public class RenderGlobalTrack {
                         addPoint(buffer, last, vCache1.set(selectedPoint.getPosition()).sub(cameraPos), 0.12f, 0xffffffff);
             }
         }
-    }
-
-    // 使用vCache1、vCache2、vCache3、vCache4
-    private static void renderLine(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last, Vector3f cameraPos) {
-        GlobalCameraTrack track = getTrack();
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
-        int selectedIndex = selected.getPointIndex();
-
-        // 选中后显示移动用箭头的线
-        if (selectedIndex >= 0) {
-            Vector3f pos;
-
-            switch (selected.getControl()) {
-                case LEFT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = vCache1.set(selectedPoint.getLeftBezierControl());
-                }
-                case RIGHT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                    pos = vCache1.set(selectedPoint.getRightBezierControl());
-                }
-                case NONE -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = vCache1.set(selectedPoint.getPosition());
-                }
-                case null, default -> pos = vCache1.zero();
-            }
-
-            pos.sub(cameraPos);
-
-            // x轴
-            Vector3f axis = vCache2.set(pos).add(1, 0, 0);
-            addLine(buffer, last, pos, axis, 0xffff1242);
-            // y轴
-            axis.add(-1, 1, 0);
-            addLine(buffer, last, pos, axis, 0xff23d400);
-            // z轴
-            axis.add(0, -1, 1);
-            addLine(buffer, last, pos, axis, 0xff0894ed);
-        }
-
-        if (track.getCount() > 2) {
-            for (int i = 1, c = track.getCount(); i < c; i++) {
-                CameraPoint p1 = track.getPoint(i - 1);
-                CameraPoint p2 = track.getPoint(i);
-                final Vector3f v1 = vCache1.set(p1.getPosition()).sub(cameraPos);
-                final Vector3f v2 = vCache2.set(p2.getPosition()).sub(cameraPos);
-
-                switch (p2.getType()) {
-                    case LINEAR -> addLine(buffer, last, v1, v2, 0xffffffff);
-                    case SMOOTH -> {
-                        Vector3f v0;
-                        Vector3f v3;
-
-                        if (i > 1) {
-                            CameraPoint p = track.getPoint(i - 2);
-                            v0 = vCache3.set(p.getPosition()).sub(cameraPos);
-                        } else {
-                            v0 = v1;
-                        }
-
-                        if (i < c - 1) {
-                            CameraPoint p = track.getPoint(i + 1);
-                            v3 = vCache4.set(p.getPosition()).sub(cameraPos);
-                        } else {
-                            v3 = v2;
-                        }
-
-                        addSmoothLine(buffer, last, v0, v1, v2, v3, 0xffffffff);
-                    }
-                    case BEZIER ->
-                            addBezierLine(buffer, last, v1, vCache3.set(p1.getRightBezierControl()).sub(cameraPos), vCache4.set(p2.getLeftBezierControl()).sub(cameraPos), v2, 0xffffffff);
-                    case STEP -> addLine(buffer, last, v1, v2, 0xff7f7f7f);
-                }
-            }
-
-            //渲染被选中点的额外线条
-            if (selectedIndex > 0) {
-                CameraPoint selectedPoint = track.getPoint(selectedIndex);
-
-                if (selectedPoint.getType() == PointInterpolationType.BEZIER) {
-                    Vector3f pos = vCache1.set(selectedPoint.getPosition()).sub(cameraPos);
-                    Vector3f left = vCache2.set(selectedPoint.getLeftBezierControl()).sub(cameraPos);
-                    addLine(buffer, last, pos, left, 0x7f98FB98);
-                    CameraPoint pre = track.getPoint(selectedIndex - 1);
-                    Vector3f prePos = vCache1.set(pre.getPosition()).sub(cameraPos);
-                    Vector3f right = vCache2.set(pre.getRightBezierControl()).sub(cameraPos);
-                    addLine(buffer, last, prePos, right, 0x7f98FB98);
-                }
-            }
-        }
-
-        bufferSource.endBatch(RenderType.LINES);
     }
 
     // 使用vCache5
