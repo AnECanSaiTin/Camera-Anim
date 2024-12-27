@@ -23,13 +23,21 @@ import static cn.anecansaitin.cameraanim.client.TrackCache.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class RenderGlobalTrack {
-    private static final Vector3f vCache1 = new Vector3f();
-    private static final Vector3f vCache2 = new Vector3f();
-    private static final Vector3f vCache3 = new Vector3f();
-    private static final Vector3f vCache4 = new Vector3f();
-    private static final Vector3f vCache5 = new Vector3f();
-    private static final Vector3f vCache6 = new Vector3f();
-    private static final Vector3f vCache7 = new Vector3f();
+    private static final int X_COLOR = 0xffff1242,
+            Y_COLOR = 0xff26ec45,
+            Z_COLOR = 0xff0894ed,
+            X_COLOR_TRANSPARENT = 0x7fff1242,
+            Y_COLOR_TRANSPARENT = 0x7f26ec45,
+            Z_COLOR_TRANSPARENT = 0x7f0894ed,
+            SELECTED_COLOR = 0xff3e90ff,
+            SELECTED_COLOR_TRANSPARENT = 0x7f3e90ff;
+    private static final Vector3f V_CACHE_1 = new Vector3f();
+    private static final Vector3f V_CACHE_2 = new Vector3f();
+    private static final Vector3f V_CACHE_3 = new Vector3f();
+    private static final Vector3f V_CACHE_4 = new Vector3f();
+    private static final Vector3f V_CACHE_5 = new Vector3f();
+    private static final Vector3f V_CACHE_6 = new Vector3f();
+    private static final Vector3f V_CACHE_7 = new Vector3f();
     private static final Vector3f CAMERA_CACHE = new Vector3f();
 
     @SubscribeEvent
@@ -38,6 +46,7 @@ public class RenderGlobalTrack {
             return;
         }
 
+        TrackCache.tick();
         PoseStack poseStack = event.getPoseStack();
         PoseStack.Pose last = poseStack.last();
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -49,45 +58,39 @@ public class RenderGlobalTrack {
         TrackCache.SelectedPoint selected = getSelectedPoint();
 
         // 线条
-        renderLines(selected, bufferSource, last, CAMERA_CACHE);
-
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_FILLED_BOX);
-        // 点
-        renderPoint(selected, buffer, last, CAMERA_CACHE);
-        //箭头
-        renderArrowhead(selected, buffer, last, CAMERA_CACHE);
-        bufferSource.endBatch(RenderType.DEBUG_FILLED_BOX);
-
-        // 选中点的移动片
-        renderSlice(selected, bufferSource, last, CAMERA_CACHE);
+        renderLines(selected, bufferSource, last);
+        // 连续三角面
+        renderFilledBox(selected, bufferSource, last);
+        // 面片
+        renderQuads(selected, bufferSource, last);
         RenderSystem.disableDepthTest();
     }
 
-    private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose, Vector3f cameraPos) {
+    private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose) {
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
         // 轨迹
-        renderTrackLine(selected, buffer, pose, cameraPos);
+        renderTrackLine(selected, buffer, pose);
         // 贝塞尔曲线控制点连接线
-        renderBezierLine(selected, buffer, pose, cameraPos);
+        renderBezierLine(selected, buffer, pose);
 
-        switch (MODE) {
+        switch (getMode()) {
             case MOVE -> // 移动线
-                    renderMoveLine(selected, buffer, pose, cameraPos);
+                    renderMoveLine(selected, buffer, pose);
         }
 
         bufferSource.endBatch(RenderType.LINES);
     }
 
     // 使用vCache1、vCache2、vCache3、vCache4
-    private static void renderTrackLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+    private static void renderTrackLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         GlobalCameraTrack track = getTrack();
 
         if (track.getCount() > 2) {
             for (int i = 1, c = track.getCount(); i < c; i++) {
                 CameraPoint p1 = track.getPoint(i - 1);
                 CameraPoint p2 = track.getPoint(i);
-                final Vector3f v1 = vCache1.set(p1.getPosition()).sub(cameraPos);
-                final Vector3f v2 = vCache2.set(p2.getPosition()).sub(cameraPos);
+                final Vector3f v1 = V_CACHE_1.set(p1.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
+                final Vector3f v2 = V_CACHE_2.set(p2.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
 
                 switch (p2.getType()) {
                     case LINEAR -> addLine(buffer, last, v1, v2, 0xffffffff);
@@ -97,14 +100,14 @@ public class RenderGlobalTrack {
 
                         if (i > 1) {
                             CameraPoint p = track.getPoint(i - 2);
-                            v0 = vCache3.set(p.getPosition()).sub(cameraPos);
+                            v0 = V_CACHE_3.set(p.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
                         } else {
                             v0 = v1;
                         }
 
                         if (i < c - 1) {
                             CameraPoint p = track.getPoint(i + 1);
-                            v3 = vCache4.set(p.getPosition()).sub(cameraPos);
+                            v3 = V_CACHE_4.set(p.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
                         } else {
                             v3 = v2;
                         }
@@ -112,7 +115,7 @@ public class RenderGlobalTrack {
                         addSmoothLine(buffer, last, v0, v1, v2, v3, 0xffffffff);
                     }
                     case BEZIER ->
-                            addBezierLine(buffer, last, v1, vCache3.set(p1.getRightBezierControl()).sub(cameraPos), vCache4.set(p2.getLeftBezierControl()).sub(cameraPos), v2, 0xffffffff);
+                            addBezierLine(buffer, last, v1, V_CACHE_3.set(p1.getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), V_CACHE_4.set(p2.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), v2, 0xffffffff);
                     case STEP -> addLine(buffer, last, v1, v2, 0xff7f7f7f);
                 }
             }
@@ -120,7 +123,7 @@ public class RenderGlobalTrack {
     }
 
     // 使用vCache1、vCache2
-    private static void renderMoveLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+    private static void renderMoveLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         GlobalCameraTrack track = getTrack();
         int selectedIndex = selected.getPointIndex();
 
@@ -134,34 +137,44 @@ public class RenderGlobalTrack {
         switch (selected.getControl()) {
             case LEFT -> {
                 CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                pos = vCache1.set(selectedPoint.getLeftBezierControl());
+                pos = V_CACHE_1.set(selectedPoint.getLeftBezierControl());
             }
             case RIGHT -> {
                 CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                pos = vCache1.set(selectedPoint.getRightBezierControl());
+                pos = V_CACHE_1.set(selectedPoint.getRightBezierControl());
             }
             case NONE -> {
                 CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                pos = vCache1.set(selectedPoint.getPosition());
+                pos = V_CACHE_1.set(selectedPoint.getPosition());
             }
-            case null, default -> pos = vCache1.zero();
+            case null, default -> pos = V_CACHE_1.zero();
         }
 
-        pos.sub(cameraPos);
+        pos.sub(RenderGlobalTrack.CAMERA_CACHE);
+        int xColor = X_COLOR,
+                yColor = Y_COLOR,
+                zColor = Z_COLOR;
+
+        // 选中变色
+        switch (getMoveMode().getMoveType()) {
+            case X -> xColor = SELECTED_COLOR;
+            case Y -> yColor = SELECTED_COLOR;
+            case Z -> zColor = SELECTED_COLOR;
+        }
 
         // x轴
-        Vector3f axis = vCache2.set(pos).add(1, 0, 0);
-        addLine(buffer, last, pos, axis, 0xffff1242);
+        Vector3f axis = V_CACHE_2.set(pos).add(1, 0, 0);
+        addLine(buffer, last, pos, axis, xColor);
         // y轴
         axis.add(-1, 1, 0);
-        addLine(buffer, last, pos, axis, 0xff23d400);
+        addLine(buffer, last, pos, axis, yColor);
         // z轴
         axis.add(0, -1, 1);
-        addLine(buffer, last, pos, axis, 0xff0894ed);
+        addLine(buffer, last, pos, axis, zColor);
     }
 
     // 使用vCache1、vCache2
-    private static void renderBezierLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+    private static void renderBezierLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         int selectedIndex = selected.getPointIndex();
         GlobalCameraTrack track = getTrack();
 
@@ -176,83 +189,46 @@ public class RenderGlobalTrack {
             return;
         }
 
-        Vector3f selectedPos = vCache1.set(selectedPoint.getPosition()).sub(cameraPos);
-        Vector3f left = vCache2.set(selectedPoint.getLeftBezierControl()).sub(cameraPos);
+        Vector3f selectedPos = V_CACHE_1.set(selectedPoint.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
+        Vector3f left = V_CACHE_2.set(selectedPoint.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE);
         addLine(buffer, last, selectedPos, left, 0x7f98FB98);
         CameraPoint pre = track.getPoint(selectedIndex - 1);
-        Vector3f prePos = vCache1.set(pre.getPosition()).sub(cameraPos);
-        Vector3f right = vCache2.set(pre.getRightBezierControl()).sub(cameraPos);
+        Vector3f prePos = V_CACHE_1.set(pre.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
+        Vector3f right = V_CACHE_2.set(pre.getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE);
         addLine(buffer, last, prePos, right, 0x7f98FB98);
     }
-    // 使用vCache1
-    private static void renderArrowhead(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
-        int selectedIndex = selected.getPointIndex();
 
-        if (selectedIndex >= 0) {
-            GlobalCameraTrack track = getTrack();
-            Vector3f pos;
+    private static void renderFilledBox(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last) {
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_FILLED_BOX);
+        // 相机点
+        renderPoint(buffer, last);
+        // 贝塞尔控制点
+        renderBezierPoint(selected, buffer, last);
+        // 选中点
+        renderSelectedPoint(selected, buffer, last);
 
-            switch (selected.getControl()) {
-                case LEFT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = vCache1.set(selectedPoint.getLeftBezierControl());
-                }
-                case RIGHT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                    pos = vCache1.set(selectedPoint.getRightBezierControl());
-                }
-                case NONE -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = vCache1.set(selectedPoint.getPosition());
-                }
-                case null, default -> pos = vCache1.zero();
-            }
-
-            pos.sub(cameraPos);
-            addArrowhead(buffer, last, pos);
+        switch (getMode()) {
+            case MOVE -> // 移动箭头
+                    renderArrowhead(selected, buffer, last);
         }
+
+        bufferSource.endBatch(RenderType.DEBUG_FILLED_BOX);
     }
 
     // 使用vCache1
-    private static void renderSlice(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last, Vector3f cameraPos) {
-        int selectedIndex = selected.getPointIndex();
-
-        if (selectedIndex >= 0) {
-            VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_QUADS);
-            GlobalCameraTrack track = getTrack();
-            Vector3f pos;
-
-            switch (selected.getControl()) {
-                case LEFT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = vCache1.set(selectedPoint.getLeftBezierControl());
-                }
-                case RIGHT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                    pos = vCache1.set(selectedPoint.getRightBezierControl());
-                }
-                case NONE -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = vCache1.set(selectedPoint.getPosition());
-                }
-                case null, default -> pos = vCache1.zero();
-            }
-
-            addSlice(buffer, last, pos.sub(cameraPos));
-            bufferSource.endBatch(RenderType.DEBUG_QUADS);
-        }
-    }
-
-    // 使用vCache1
-    private static void renderPoint(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last, Vector3f cameraPos) {
+    private static void renderPoint(VertexConsumer buffer, PoseStack.Pose last) {
         GlobalCameraTrack track = getTrack();
 
         for (int i = 0; i < track.getCount(); i++) {
             CameraPoint point = track.getPoint(i);
-            addPoint(buffer, last, vCache1.set(point.getPosition()).sub(cameraPos), 0.1f, 0xff000000);
+            addPoint(buffer, last, V_CACHE_1.set(point.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.1f, 0xff000000);
         }
+    }
 
+    // 使用vCache1
+    private static void renderBezierPoint(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         int selectedIndex = selected.getPointIndex();
+        GlobalCameraTrack track = getTrack();
 
         // 被选中点的额外点
         if (selectedIndex >= 0) {
@@ -260,32 +236,134 @@ public class RenderGlobalTrack {
 
             // 显示贝塞尔控制点
             if (selectedIndex > 0 && selectedPoint.getType() == PointInterpolationType.BEZIER) {
-                addPoint(buffer, last, vCache1.set(track.getPoint(selectedIndex - 1).getRightBezierControl()).sub(cameraPos), 0.05f, 0x7f98FB98);
-                addPoint(buffer, last, vCache1.set(selectedPoint.getLeftBezierControl()).sub(cameraPos), 0.05f, 0x7f98FB98);
+                addPoint(buffer, last, V_CACHE_1.set(track.getPoint(selectedIndex - 1).getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.05f, 0x7f98FB98);
+                addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.05f, 0x7f98FB98);
             }
+        }
+    }
+
+    // 使用vCache1
+    private static void renderSelectedPoint(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
+        int selectedIndex = selected.getPointIndex();
+        GlobalCameraTrack track = getTrack();
+
+        if (selectedIndex >= 0) {
+            CameraPoint selectedPoint = track.getPoint(selectedIndex);
 
             switch (selected.getControl()) {
                 case LEFT ->
-                        addPoint(buffer, last, vCache1.set(selectedPoint.getLeftBezierControl()).sub(cameraPos), 0.07f, 0x7fffffff);
+                        addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.07f, SELECTED_COLOR_TRANSPARENT);
                 case RIGHT ->
-                        addPoint(buffer, last, vCache1.set(track.getPoint(selectedIndex - 1).getRightBezierControl()).sub(cameraPos), 0.07f, 0x7fffffff);
+                        addPoint(buffer, last, V_CACHE_1.set(track.getPoint(selectedIndex - 1).getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.07f, SELECTED_COLOR_TRANSPARENT);
                 case NONE ->
-                        addPoint(buffer, last, vCache1.set(selectedPoint.getPosition()).sub(cameraPos), 0.12f, 0xffffffff);
+                        addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.12f, SELECTED_COLOR_TRANSPARENT);
             }
+        }
+    }
+
+    // 使用vCache1
+    private static void renderArrowhead(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
+        int selectedIndex = selected.getPointIndex();
+
+        if (selectedIndex >= 0) {
+            GlobalCameraTrack track = getTrack();
+            Vector3f pos;
+
+            switch (selected.getControl()) {
+                case LEFT -> {
+                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
+                    pos = V_CACHE_1.set(selectedPoint.getLeftBezierControl());
+                }
+                case RIGHT -> {
+                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
+                    pos = V_CACHE_1.set(selectedPoint.getRightBezierControl());
+                }
+                case NONE -> {
+                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
+                    pos = V_CACHE_1.set(selectedPoint.getPosition());
+                }
+                case null, default -> pos = V_CACHE_1.zero();
+            }
+
+            pos.sub(RenderGlobalTrack.CAMERA_CACHE);
+            int xColor = X_COLOR,
+                    yColor = Y_COLOR,
+                    zColor = Z_COLOR;
+
+            // 选中变色
+            switch (getMoveMode().getMoveType()) {
+                case X -> xColor = SELECTED_COLOR;
+                case Y -> yColor = SELECTED_COLOR;
+                case Z -> zColor = SELECTED_COLOR;
+            }
+
+            addArrowhead(buffer, last, pos, xColor, yColor, zColor);
+        }
+    }
+
+    private static void renderQuads(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last) {
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_QUADS);
+
+        switch (getMode()) {
+            case NONE -> {
+            }
+            case MOVE -> // 移动半透明片
+                    renderMoveSlice(selected, buffer, last);
+        }
+
+        bufferSource.endBatch(RenderType.DEBUG_QUADS);
+    }
+
+    // 使用vCache1
+    private static void renderMoveSlice(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
+        int selectedIndex = selected.getPointIndex();
+
+        if (selectedIndex >= 0) {
+            GlobalCameraTrack track = getTrack();
+            Vector3f pos;
+
+            switch (selected.getControl()) {
+                case LEFT -> {
+                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
+                    pos = V_CACHE_1.set(selectedPoint.getLeftBezierControl());
+                }
+                case RIGHT -> {
+                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
+                    pos = V_CACHE_1.set(selectedPoint.getRightBezierControl());
+                }
+                case NONE -> {
+                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
+                    pos = V_CACHE_1.set(selectedPoint.getPosition());
+                }
+                case null, default -> pos = V_CACHE_1.zero();
+            }
+
+            int xyColor = Z_COLOR_TRANSPARENT,
+                    yzColor = X_COLOR_TRANSPARENT,
+                    xzColor = Y_COLOR_TRANSPARENT;
+
+            // 选中变色
+            switch (getMoveMode().getMoveType()) {
+                case XY -> xyColor = SELECTED_COLOR_TRANSPARENT;
+                case YZ -> yzColor = SELECTED_COLOR_TRANSPARENT;
+                case XZ -> xzColor = SELECTED_COLOR_TRANSPARENT;
+            }
+
+            addSlice(buffer, last, pos.sub(RenderGlobalTrack.CAMERA_CACHE), xyColor, yzColor, xzColor);
         }
     }
 
     // 使用vCache5
     private static void addLine(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos1, Vector3f pos2, int color) {
-        Vector3f normalize = vCache5.set(pos2).sub(pos1).normalize();
+        Vector3f normalize = V_CACHE_5.set(pos2).sub(pos1).normalize();
         buffer.addVertex(pose, pos1).setColor(color).setNormal(pose, normalize);
         buffer.addVertex(pose, pos2).setColor(color).setNormal(pose, normalize);
     }
 
     // 使用vCache6、vCache7
     private static void addSmoothLine(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pre, Vector3f p1, Vector3f p2, Vector3f after, int color) {
-        Vector3f pos1 = vCache6.set(p1);
-        Vector3f pos2 = vCache7.zero();
+        Vector3f pos1 = V_CACHE_6.set(p1);
+        Vector3f pos2 = V_CACHE_7.zero();
 
         for (float i = 1; i <= 20; i++) {
             float f = 0.05f * i;
@@ -299,8 +377,8 @@ public class RenderGlobalTrack {
 
     // 使用vCache6、vCache7
     private static void addBezierLine(VertexConsumer buffer, PoseStack.Pose pose, Vector3f p1, Vector3f c1, Vector3f c2, Vector3f p2, int color) {
-        Vector3f pos1 = vCache6.set(p1);
-        Vector3f pos2 = vCache7.zero();
+        Vector3f pos1 = V_CACHE_6.set(p1);
+        Vector3f pos2 = V_CACHE_7.zero();
 
         for (int i = 0; i < 20; i++) {
             float t = 0.05f * i;
@@ -314,7 +392,7 @@ public class RenderGlobalTrack {
 
     // 使用vCache5
     private static void addPoint(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos, float size, int color) {
-        Vector3f vec = vCache5;
+        Vector3f vec = V_CACHE_5;
 
         buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//1
         buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//1
@@ -337,78 +415,81 @@ public class RenderGlobalTrack {
     }
 
     // 使用vCache5
-    private static void addSlice(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos) {
+    private static void addSlice(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos, int xyColor, int yzColor, int xzColor) {
         float spacing = 0.2f;
         float half = 0.3f + spacing;
-        Vector3f vec = vCache5;
-        buffer.addVertex(pose, vec.set(pos).add(0, spacing, spacing)).setColor(0x77fd3043);
-        buffer.addVertex(pose, vec.set(pos).add(0, spacing, half)).setColor(0x77fd3043);
-        buffer.addVertex(pose, vec.set(pos).add(0, half, half)).setColor(0x77fd3043);
-        buffer.addVertex(pose, vec.set(pos).add(0, half, spacing)).setColor(0x77fd3043);
+        Vector3f vec = V_CACHE_5;
+        // yz
+        buffer.addVertex(pose, vec.set(pos).add(0, spacing, spacing)).setColor(yzColor);
+        buffer.addVertex(pose, vec.set(pos).add(0, spacing, half)).setColor(yzColor);
+        buffer.addVertex(pose, vec.set(pos).add(0, half, half)).setColor(yzColor);
+        buffer.addVertex(pose, vec.set(pos).add(0, half, spacing)).setColor(yzColor);
 
-        buffer.addVertex(pose, vec.set(pos).add(half, half, 0)).setColor(0x772d5ee8);
-        buffer.addVertex(pose, vec.set(pos).add(half, spacing, 0)).setColor(0x772d5ee8);
-        buffer.addVertex(pose, vec.set(pos).add(spacing, spacing, 0)).setColor(0x772d5ee8);
-        buffer.addVertex(pose, vec.set(pos).add(spacing, half, 0)).setColor(0x772d5ee8);
+        //xy
+        buffer.addVertex(pose, vec.set(pos).add(half, half, 0)).setColor(xyColor);
+        buffer.addVertex(pose, vec.set(pos).add(half, spacing, 0)).setColor(xyColor);
+        buffer.addVertex(pose, vec.set(pos).add(spacing, spacing, 0)).setColor(xyColor);
+        buffer.addVertex(pose, vec.set(pos).add(spacing, half, 0)).setColor(xyColor);
 
-        buffer.addVertex(pose, vec.set(pos).add(spacing, 0, spacing)).setColor(0x7726ec45);
-        buffer.addVertex(pose, vec.set(pos).add(spacing, 0, half)).setColor(0x7726ec45);
-        buffer.addVertex(pose, vec.set(pos).add(half, 0, half)).setColor(0x7726ec45);
-        buffer.addVertex(pose, vec.set(pos).add(half, 0, spacing)).setColor(0x7726ec45);
+        //xz
+        buffer.addVertex(pose, vec.set(pos).add(spacing, 0, spacing)).setColor(xzColor);
+        buffer.addVertex(pose, vec.set(pos).add(spacing, 0, half)).setColor(xzColor);
+        buffer.addVertex(pose, vec.set(pos).add(half, 0, half)).setColor(xzColor);
+        buffer.addVertex(pose, vec.set(pos).add(half, 0, spacing)).setColor(xzColor);
     }
 
     // 使用vCache5
-    private static void addArrowhead(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos) {
-        Vector3f vec = vCache5.set(pos);
+    private static void addArrowhead(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos, int xColor, int yColor, int zColor) {
+        Vector3f vec = V_CACHE_5.set(pos);
         float size = 0.1f;
         float height = 0.35f;
         float spacing = 1;
         // y
         vec.add(0, spacing, 0);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x + size, vec.y, vec.z - size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z + size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x + size, vec.y, vec.z + size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x + size, vec.y, vec.z - size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z + size).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(0xff26ec45);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(0xff26ec45);
+        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
+        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
+        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
+        buffer.addVertex(pose, vec.x + size, vec.y, vec.z - size).setColor(yColor);
+        buffer.addVertex(pose, vec.x - size, vec.y, vec.z + size).setColor(yColor);
+        buffer.addVertex(pose, vec.x + size, vec.y, vec.z + size).setColor(yColor);
+        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
+        buffer.addVertex(pose, vec.x + size, vec.y, vec.z - size).setColor(yColor);
+        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
+        buffer.addVertex(pose, vec.x - size, vec.y, vec.z + size).setColor(yColor);
+        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
+        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
+        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
 
         // x
         vec.add(spacing, -spacing, 0);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y + size, vec.z - size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z + size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y + size, vec.z + size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y + size, vec.z - size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z + size).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(0xffff1242);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(0xffff1242);
+        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y + size, vec.z - size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y - size, vec.z + size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y + size, vec.z + size).setColor(xColor);
+        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y + size, vec.z - size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
+        buffer.addVertex(pose, vec.x, vec.y - size, vec.z + size).setColor(xColor);
+        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
+        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
+        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
 
         // z
         vec.add(-spacing, 0, spacing);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x - size, vec.y + size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x + size, vec.y - size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x + size, vec.y + size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x - size, vec.y + size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x + size, vec.y - size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(0xff0894ed);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(0xff0894ed);
+        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
+        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
+        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
+        buffer.addVertex(pose, vec.x - size, vec.y + size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x + size, vec.y - size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
+        buffer.addVertex(pose, vec.x + size, vec.y + size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x - size, vec.y + size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x + size, vec.y - size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
+        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
     }
 }
