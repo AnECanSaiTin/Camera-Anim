@@ -38,43 +38,36 @@ public class PointSettingScreen extends Screen {
     protected void init() {
         TrackCache.SelectedPoint selectedPoint = TrackCache.getSelectedPoint();
         GlobalCameraTrack track = TrackCache.getTrack();
-        int selectedIndex = selectedPoint.getPointIndex();
-        Vector3f pos;
+        int time = selectedPoint.getPointTime();
+        Vector3f pos = selectedPoint.getPosition();
+        if (pos == null) return;
 
         int x = width / 2 - 100;
         int y = height / 2 - 50;
 
-        switch (selectedPoint.getControl()) {
-            case LEFT -> pos = track.getPoint(selectedIndex).getLeftBezierControl();
-            case RIGHT -> pos = track.getPoint(selectedIndex - 1).getRightBezierControl();
-            case NONE -> {
-                CameraPoint point = track.getPoint(selectedIndex);
-                pos = point.getPosition();
-                float fov = point.getFov();
-                Vector3f rot = point.getRotation().getEulerAnglesYXZ(new Vector3f()).mul(Mth.RAD_TO_DEG);
-                int time = track.getTime(selectedIndex);
-                addRenderableOnly(new StringWidget(x + 1, y + 2 + 10, 30, 10, ROT, font));
-                numbers[0] = new NumberEditBox(font, x + 37, y + 2 + 10, 50, 10, rot.x, Component.literal("xRot"));
-                addRenderableWidget(numbers[0]);
-                numbers[1] = new NumberEditBox(font, x + 92, y + 2 + 10, 50, 10, rot.y, Component.literal("yRot"));
-                addRenderableWidget(numbers[1]);
-                addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10, 30, 10, ZOOM, font));
-                numbers[2] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10, 50, 10, fov, Component.literal("zoom"));
-                addRenderableWidget(numbers[2]);
-                type = CycleButton
-                        .builder(PointInterpolationType::getDisplayName)
-                        .withValues(PointInterpolationType.values())
-                        .withInitialValue(point.getType())
-                        .create(x + 37, y + 2 + 10 + 10 + 10, 65, 11, TYPE, (b, t) -> {
-                        });
-                addRenderableWidget(type);
-                addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10 + 10 + 11, 30, 10, TIME, font));
-                numbers[3] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10 + 10 + 11, 50, 10, time, Component.literal("time"));
-                addRenderableWidget(numbers[3]);
-            }
-            case null, default -> {
-                return;
-            }
+        if (selectedPoint.getControl() == TrackCache.ControlType.NONE) {
+            CameraPoint point = track.getPoint(time);
+            assert point != null;// pos不为null，则point不为null
+            float fov = point.getFov();
+            Vector3f rot = point.getRotation().getEulerAnglesYXZ(new Vector3f()).mul(Mth.RAD_TO_DEG);
+            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10, 30, 10, ROT, font));
+            numbers[0] = new NumberEditBox(font, x + 37, y + 2 + 10, 50, 10, rot.x, Component.literal("xRot"));
+            addRenderableWidget(numbers[0]);
+            numbers[1] = new NumberEditBox(font, x + 92, y + 2 + 10, 50, 10, rot.y, Component.literal("yRot"));
+            addRenderableWidget(numbers[1]);
+            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10, 30, 10, ZOOM, font));
+            numbers[2] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10, 50, 10, fov, Component.literal("zoom"));
+            addRenderableWidget(numbers[2]);
+            type = CycleButton
+                    .builder(PointInterpolationType::getDisplayName)
+                    .withValues(PointInterpolationType.values())
+                    .withInitialValue(point.getType())
+                    .create(x + 37, y + 2 + 10 + 10 + 10, 65, 11, TYPE, (b, t) -> {
+                    });
+            addRenderableWidget(type);
+            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10 + 10 + 11, 30, 10, TIME, font));
+            numbers[3] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10 + 10 + 11, 50, 10, time, Component.literal("time"));
+            addRenderableWidget(numbers[3]);
         }
 
         addRenderableOnly(new StringWidget(x + 1, y + 2, 30, 10, POS, font));
@@ -103,17 +96,14 @@ public class PointSettingScreen extends Screen {
                     }
 
                     switch (selectedPoint.getControl()) {
-                        case LEFT -> {
-                            track.getPoint(selectedIndex).getLeftBezierControl().set(xn, yn, zn);
-                            onClose();
-                        }
-                        case RIGHT -> {
-                            track.getPoint(selectedIndex - 1).getRightBezierControl().set(xn, yn, zn);
+                        case LEFT, RIGHT -> {
+                            pos.set(xn, yn, zn);
                             onClose();
                         }
                         case NONE -> {
-                            CameraPoint point = track.getPoint(selectedIndex);
-                            point.getPosition().set(xn, yn, zn);
+                            CameraPoint point = track.getPoint(time);
+                            assert point != null;// pos不为null，则point不为null
+                            pos.set(xn, yn, zn);
 
                             try {
                                 float xRot = Float.parseFloat(numbers[0].getValue()) * Mth.DEG_TO_RAD;
@@ -132,25 +122,11 @@ public class PointSettingScreen extends Screen {
                             }
 
                             point.setType(type.getValue());
-                            track.updateBezier(selectedIndex);
+                            track.updateBezier(time);
 
                             try {
-                                int time = Integer.parseInt(numbers[3].getValue());
-                                boolean reAdd = false;
-
-                                if (selectedIndex > 0 && track.getTime(selectedIndex - 1) >= time) {
-                                    reAdd = true;
-                                } else if (selectedIndex < track.getCount() - 1 && track.getTime(selectedIndex + 1) <= time) {
-                                    reAdd = true;
-                                }
-
-                                if (reAdd) {
-                                    track.remove(selectedIndex);
-                                    int index = track.add(time, point);
-                                    selectedPoint.setSelected(index);
-                                } else {
-                                    track.setTime(selectedIndex, time);
-                                }
+                                int newTime = Integer.parseInt(numbers[3].getValue());
+                                track.setTime(time, newTime);
                                 onClose();
                             } catch (NumberFormatException e) {
                                 info.setMessage(TIME_ERROR);

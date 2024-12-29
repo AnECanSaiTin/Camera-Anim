@@ -1,96 +1,110 @@
 package cn.anecansaitin.cameraanim.common.animation;
 
-import cn.anecansaitin.cameraanim.client.TrackCache;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.*;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
 
 /// 全局相机轨迹
 public class GlobalCameraTrack {
     public static final GlobalCameraTrack NULL = new NullTrack();
-    private final ArrayList<CameraPoint> points;
-    private final IntArrayList timeLine;
+    private final TreeMap<Integer, CameraPoint> keyframes;
+    private final Int2ObjectOpenHashMap<CameraPoint> keyframeMapCache;
+    private final ArrayList<CameraPoint> keyframeListCache;
+    private boolean dirty;
     private final String id;
 
     public GlobalCameraTrack(String id) {
-        points = new ArrayList<>();
-        timeLine = new IntArrayList();
+        keyframes = new TreeMap<>();
+        keyframeMapCache = new Int2ObjectOpenHashMap<>();
+        keyframeListCache = new ArrayList<>();
         this.id = id;
     }
 
-    private GlobalCameraTrack(ArrayList<CameraPoint> points, IntArrayList timeLine, String id) {
-        this.points = points;
-        this.timeLine = timeLine;
+    private GlobalCameraTrack(TreeMap<Integer, CameraPoint> keyframes, String id) {
+        this.keyframes = keyframes;
         this.id = id;
+        keyframeMapCache = new Int2ObjectOpenHashMap<>(keyframes);
+        keyframeListCache = new ArrayList<>(keyframes.values());
     }
 
     /// 把点加入到指定时间
     ///
     /// 相同时间点进行覆盖
-    public int add(int time, CameraPoint point) {
-        if (timeLine.isEmpty()) {
-            timeLine.add(time);
-            points.add(point);
-            return 0;
+    public void add(int time, CameraPoint point) {
+        Integer i = keyframes.lastKey();
+
+        if (i != null && i < time) {
+            keyframeListCache.add(point);
         } else {
-            int left = 0;
-            int right = timeLine.size() - 1;
-
-            while (left <= right) {
-                int mid = left + (right - left) / 2;
-                int midVal = timeLine.getInt(mid);
-
-                if (midVal < time) {
-                    left = mid + 1;
-                } else if (midVal > time) {
-                    right = mid - 1;
-                } else {
-                    left = mid; // 找到了相同值的位置
-                    right = -1; // -1表示已经存在这个值
-                    break;
-                }
-            }
-
-            if (right == -1) {
-                points.set(left, point);
-                updateBezier(left);
-            } else {
-                points.add(left, point);
-                timeLine.add(left, time);
-                updateBezier(left);
-            }
-
-            return left;
+            dirty = true;
         }
+
+        keyframes.put(time, point);
+        keyframeMapCache.put(time, point);
+        updateBezier(time);
     }
 
     public void add(CameraPoint point) {
-        int index = points.size();
-        points.add(point);
-
-        if (index > 0) {
-            timeLine.add(timeLine.getInt(index - 1) + 20);
+        if (keyframes.isEmpty()) {
+            keyframes.put(0, point);
+            keyframeMapCache.put(0, point);
         } else {
-            timeLine.add(0);
+            int time = keyframes.lastKey() + 20;
+            keyframes.put(time, point);
+            keyframeMapCache.put(time, point);
+            updateBezier(time);
         }
 
-        updateBezier(index);
+        keyframeListCache.add(point);
+    }
+
+    public Int2ObjectMap.FastEntrySet<CameraPoint> getEntries() {
+        return keyframeMapCache.int2ObjectEntrySet();
+    }
+
+    public ArrayList<CameraPoint> getPoints() {
+        updateList();
+        return keyframeListCache;
+    }
+
+    private void updateList() {
+        if (!dirty) {
+            return;
+        }
+
+        keyframeListCache.clear();
+        keyframeListCache.addAll(keyframes.values());
+        dirty = false;
     }
 
     /// 更新控制点
-    public void updateBezier(int index) {
-        CameraPoint point = points.get(index);
-
-        if (index > 0 && point.getType() == PointInterpolationType.BEZIER) {
-            CameraPoint prePoint = points.get(index - 1);
-            Vector3f c = new Vector3f(point.getPosition()).add(prePoint.getPosition()).mul(0.5f);
-            prePoint.setRightBezierControl(c.x, c.y, c.z);
-            point.setLeftBezierControl(c.x, c.y, c.z);
+    public void updateBezier(int time) {
+        if (!keyframeMapCache.containsKey(time)) {
+            return;
         }
 
-        if (index < points.size() - 1) {
-            CameraPoint nextPoint = points.get(index + 1);
+        CameraPoint point = keyframeMapCache.get(time);
+
+        if (point.getType() == PointInterpolationType.BEZIER) {
+            Map.Entry<Integer, CameraPoint> pre = keyframes.lowerEntry(time);
+
+            if (pre != null) {
+                CameraPoint prePoint = pre.getValue();
+                Vector3f c = new Vector3f(point.getPosition()).add(prePoint.getPosition()).mul(0.5f);
+                prePoint.setRightBezierControl(c.x, c.y, c.z);
+                point.setLeftBezierControl(c.x, c.y, c.z);
+            }
+        }
+
+        Map.Entry<Integer, CameraPoint> next = keyframes.higherEntry(time);
+
+        if (next != null) {
+            CameraPoint nextPoint = next.getValue();
 
             if (nextPoint.getType() != PointInterpolationType.BEZIER) {
                 return;
@@ -102,43 +116,72 @@ public class GlobalCameraTrack {
         }
     }
 
-    public void remove(int index) {
-        if (index > 0 && index < points.size() - 1) {
-            CameraPoint next = points.get(index + 1);;
-
-            if (next.getType() == PointInterpolationType.BEZIER) {
-                CameraPoint pre = points.get(index - 1);
-                Vector3f mid = new Vector3f(pre.getPosition()).add(next.getPosition()).mul(0.5f);
-                pre.setRightBezierControl(mid.x, mid.y, mid.z);
-                next.setLeftBezierControl(mid.x, mid.y, mid.z);
-            }
+    public void remove(int time) {
+        if (!keyframeMapCache.containsKey(time)) {
+            return;
         }
 
-        points.remove(index);
-        timeLine.removeInt(index);
+        Map.Entry<Integer, CameraPoint> pre = keyframes.lowerEntry(time);
+        Map.Entry<Integer, CameraPoint> next = keyframes.higherEntry(time);
+        keyframes.remove(time);
+        keyframeMapCache.remove(time);
+
+        if (next == null || pre == null) {
+            return;
+        }
+
+        CameraPoint nextPoint = next.getValue();
+
+        if (nextPoint.getType() != PointInterpolationType.BEZIER) {
+            return;
+        }
+
+        CameraPoint prePoint = pre.getValue();
+        Vector3f c = new Vector3f(prePoint.getPosition()).add(nextPoint.getPosition()).mul(0.5f);
+        prePoint.setRightBezierControl(c.x, c.y, c.z);
+        nextPoint.setLeftBezierControl(c.x, c.y, c.z);
     }
 
-    public CameraPoint getPoint(int index) {
-        return points.get(index);
+    @Nullable
+    public CameraPoint getPoint(int time) {
+        return keyframeMapCache.get(time);
     }
 
-    public int getTime(int index) {
-        return timeLine.getInt(index);
+    @Nullable
+    public CameraPoint getPrePoint(int time) {
+        return keyframes.lowerEntry(time).getValue();
     }
 
-    public void setTime(int index, int time) {
-        timeLine.set(index, time);
+    @Nullable
+    public CameraPoint getNextPoint(int time) {
+        return keyframes.higherEntry(time).getValue();
     }
 
-    public int getCount() {
-        return points.size();
+    public void setTime(int oldTime, int newTime) {
+        if (!keyframeMapCache.containsKey(oldTime)) {
+            return;
+        }
+
+        CameraPoint point = keyframeMapCache.remove(oldTime);
+        keyframeMapCache.put(newTime, point);
+        Integer pre = keyframes.lowerKey(oldTime);
+        Integer next = keyframes.higherKey(oldTime);
+        keyframes.remove(oldTime);
+        keyframes.put(newTime, point);
+
+        if (pre != null && newTime < pre || next != null && newTime > next) {
+            updateBezier(newTime);
+        }
+
+        dirty = true;
     }
 
     public String getId() {
         return id;
     }
+
     public GlobalCameraTrack resetID(String id) {
-        return new GlobalCameraTrack(points, timeLine, id);
+        return new GlobalCameraTrack(keyframes, id);
     }
 
     private static class NullTrack extends GlobalCameraTrack {
@@ -147,8 +190,7 @@ public class GlobalCameraTrack {
         }
 
         @Override
-        public int add(int time, CameraPoint point) {
-            return -1;
+        public void add(int time, CameraPoint point) {
         }
 
         @Override
@@ -162,11 +204,6 @@ public class GlobalCameraTrack {
         @Override
         public CameraPoint getPoint(int index) {
             return CameraPoint.NULL;
-        }
-
-        @Override
-        public int getTime(int index) {
-            return 0;
         }
     }
 }

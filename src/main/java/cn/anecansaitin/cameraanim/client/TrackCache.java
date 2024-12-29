@@ -3,8 +3,12 @@ package cn.anecansaitin.cameraanim.client;
 import cn.anecansaitin.cameraanim.common.animation.CameraPoint;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraTrack;
 import cn.anecansaitin.cameraanim.common.animation.PointInterpolationType;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
+
+import java.util.Objects;
 
 import static cn.anecansaitin.cameraanim.client.ClientUtil.*;
 
@@ -52,8 +56,8 @@ public class TrackCache {
 
     // 每一帧的更新
     public static void tick() {
-        switch (MODE) {
-            case MOVE -> MOVE_DATA.move();
+        if (Objects.requireNonNull(MODE) == Mode.MOVE) {
+            MOVE_DATA.move();
         }
     }
 
@@ -75,7 +79,7 @@ public class TrackCache {
             return;
         }
 
-        if (SELECTED_POINT.pointIndex < 0) {
+        if (SELECTED_POINT.pointTime < 0) {
             return;
         }
 
@@ -87,28 +91,34 @@ public class TrackCache {
     }
 
     private static float pickBezier(float length, Vector3f origin, Vector3f direction) {
-        int selectedIndex = SELECTED_POINT.getPointIndex();
+        int selectedTime = SELECTED_POINT.getPointTime();
 
-        if (selectedIndex <= 0) {
+        if (selectedTime <= 0) {
             return length;
         }
         // 检查是否为贝塞尔曲线控制点
-        CameraPoint point = TRACK.getPoint(selectedIndex);
+        CameraPoint point = TRACK.getPoint(selectedTime);
 
-        if (point.getType() != PointInterpolationType.BEZIER) {
+        if (point == null || point.getType() != PointInterpolationType.BEZIER) {
             return length;
         }
 
-        CameraPoint pre = TRACK.getPoint(selectedIndex - 1);
         Vector3f leftBezierControl = point.getLeftBezierControl();
         float leftL = leftBezierControl.distanceSquared(origin);
-        Vector3f rightBezierControl = pre.getRightBezierControl();
-        float rightL = rightBezierControl.distanceSquared(origin);
 
         if (leftL <= length && Intersectionf.testRayAab(origin, direction, new Vector3f(leftBezierControl).sub(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND), new Vector3f(leftBezierControl).add(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND))) {
             length = leftL;
             SELECTED_POINT.setControl(ControlType.LEFT);
         }
+
+        CameraPoint pre = TRACK.getPrePoint(selectedTime);
+
+        if (pre == null) {
+            return length;
+        }
+
+        Vector3f rightBezierControl = pre.getRightBezierControl();
+        float rightL = rightBezierControl.distanceSquared(origin);
 
         if (rightL <= length && Intersectionf.testRayAab(origin, direction, new Vector3f(rightBezierControl).sub(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND), new Vector3f(rightBezierControl).add(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND))) {
             length = rightL;
@@ -119,10 +129,10 @@ public class TrackCache {
     }
 
     private static void pickPoint(float length, Vector3f origin, Vector3f direction) {
-        int index = -1;
+        int time = -1;
 
-        for (int i = 0, count = TRACK.getCount(); i < count; i++) {
-            Vector3f position = TRACK.getPoint(i).getPosition();
+        for (Int2ObjectMap.Entry<CameraPoint> entry : TRACK.getEntries()) {
+            Vector3f position = entry.getValue().getPosition();
             float d = position.distanceSquared(origin);
 
             if (d > length) {
@@ -135,12 +145,12 @@ public class TrackCache {
                 }
 
                 length = d;
-                index = i;
+                time = entry.getIntKey();
             }
         }
 
-        if (index >= 0) {
-            SELECTED_POINT.setSelected(index);
+        if (time >= 0) {
+            SELECTED_POINT.setSelected(time);
         }
     }
 
@@ -166,11 +176,11 @@ public class TrackCache {
     }
 
     public static class SelectedPoint {
-        private int pointIndex = -1;
+        private int pointTime = -1;
         private ControlType control = ControlType.NONE;
 
         public void setSelected(int pointIndex) {
-            this.pointIndex = pointIndex;
+            this.pointTime = pointIndex;
             control = ControlType.NONE;
         }
 
@@ -178,16 +188,41 @@ public class TrackCache {
             this.control = control;
         }
 
-        public int getPointIndex() {
-            return pointIndex;
+        public int getPointTime() {
+            return pointTime;
         }
 
         public ControlType getControl() {
             return control;
         }
 
+        @Nullable
+        public Vector3f getPosition() {
+            Vector3f pos = null;
+
+            switch (control) {
+                case LEFT -> {
+                    CameraPoint point = TRACK.getPoint(pointTime);
+                    if (point == null) break;
+                    pos = point.getLeftBezierControl();
+                }
+                case RIGHT -> {
+                    CameraPoint point = TRACK.getPrePoint(pointTime);
+                    if (point == null) break;
+                    pos = point.getRightBezierControl();
+                }
+                case NONE -> {
+                    CameraPoint point = TRACK.getPoint(pointTime);
+                    if (point == null) break;
+                    pos = point.getPosition();
+                }
+            }
+
+            return pos;
+        }
+
         private void reset() {
-            pointIndex = -1;
+            pointTime = -1;
             control = ControlType.NONE;
         }
     }
@@ -220,33 +255,17 @@ public class TrackCache {
             moveType = MoveType.NONE;
         }
 
-        private boolean pickMoveModule(Vector3f origin, Vector3f direction, boolean left) {
-            int selectedIndex = SELECTED_POINT.getPointIndex();
+        private boolean pickMoveModule(Vector3f origin, Vector3f direction, boolean leftClick) {
+            int selectedTime = SELECTED_POINT.getPointTime();
 
-            if (selectedIndex < 0) {
+            if (selectedTime < 0) {
                 return false;
             }
 
-            if (left) {
-                Vector3f pos;
+            if (leftClick) {
+                Vector3f pos = SELECTED_POINT.getPosition();
 
-                switch (SELECTED_POINT.getControl()) {
-                    case LEFT -> {
-                        CameraPoint selectedPoint = TRACK.getPoint(selectedIndex);
-                        pos = selectedPoint.getLeftBezierControl();
-                    }
-                    case RIGHT -> {
-                        CameraPoint selectedPoint = TRACK.getPoint(selectedIndex - 1);
-                        pos = selectedPoint.getRightBezierControl();
-                    }
-                    case NONE -> {
-                        CameraPoint selectedPoint = TRACK.getPoint(selectedIndex);
-                        pos = selectedPoint.getPosition();
-                    }
-                    case null, default -> {
-                        return false;
-                    }
-                }
+                if (pos == null) return false;
 
                 float deadZone = 0.1f,
                         l = 0.9f + 0.35f,
@@ -313,17 +332,23 @@ public class TrackCache {
 
                 switch (SELECTED_POINT.control) {
                     case LEFT -> {
-                        pos = TRACK.getPoint(SELECTED_POINT.pointIndex).getLeftBezierControl();
+                        CameraPoint point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                        if (point == null) return false;
+                        pos = point.getLeftBezierControl();
                         min = new Vector3f(pos).sub(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                         max = new Vector3f(pos).add(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                     }
                     case RIGHT -> {
-                        pos = TRACK.getPoint(SELECTED_POINT.pointIndex - 1).getRightBezierControl();
+                        CameraPoint point = TRACK.getPrePoint(SELECTED_POINT.pointTime);
+                        if (point == null) return false;
+                        pos = point.getRightBezierControl();
                         min = new Vector3f(pos).sub(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                         max = new Vector3f(pos).add(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                     }
                     case NONE -> {
-                        pos = TRACK.getPoint(SELECTED_POINT.pointIndex).getPosition();
+                        CameraPoint point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                        if (point == null) return false;
+                        pos = point.getPosition();
                         min = new Vector3f(pos).sub(POINT_PICK_EXPAND, POINT_PICK_EXPAND, POINT_PICK_EXPAND);
                         max = new Vector3f(pos).add(POINT_PICK_EXPAND, POINT_PICK_EXPAND, POINT_PICK_EXPAND);
                     }
@@ -345,16 +370,28 @@ public class TrackCache {
         }
 
         private void move() {
-            if (SELECTED_POINT.pointIndex < 0 || moveType == MoveType.NONE) {
+            if (SELECTED_POINT.pointTime < 0 || moveType == MoveType.NONE) {
                 return;
             }
 
             Vector3f pos;
 
             switch (SELECTED_POINT.control) {
-                case LEFT -> pos = TRACK.getPoint(SELECTED_POINT.pointIndex).getLeftBezierControl();
-                case RIGHT -> pos = TRACK.getPoint(SELECTED_POINT.pointIndex - 1).getRightBezierControl();
-                case NONE -> pos = TRACK.getPoint(SELECTED_POINT.pointIndex).getPosition();
+                case LEFT -> {
+                    CameraPoint point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                    if (point == null) return;
+                    pos = point.getLeftBezierControl();
+                }
+                case RIGHT -> {
+                    CameraPoint point = TRACK.getPrePoint(SELECTED_POINT.pointTime);
+                    if (point == null) return;
+                    pos = point.getRightBezierControl();
+                }
+                case NONE -> {
+                    CameraPoint point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                    if (point == null) return;
+                    pos = point.getPosition();
+                }
                 case null, default -> {
                     return;
                 }
@@ -364,7 +401,6 @@ public class TrackCache {
             Vector3f origin = playerEyePos();
             float yRot = playerYHeadRot();
             float xRot = playerXRot();
-
 
             /// 解释下移动的算法
             /// 从视线处发出射线，并与对应平面相交，得到交点

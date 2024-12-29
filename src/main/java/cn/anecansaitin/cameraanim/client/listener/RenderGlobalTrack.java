@@ -19,6 +19,8 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+
 import static cn.anecansaitin.cameraanim.client.TrackCache.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
@@ -42,7 +44,7 @@ public class RenderGlobalTrack {
 
     @SubscribeEvent
     public static void onRender(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(TrackCache.VIEW || TrackCache.EDIT) || getTrack().getCount() < 1) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(TrackCache.VIEW || TrackCache.EDIT) || getTrack().getPoints().isEmpty()) {
             return;
         }
 
@@ -84,73 +86,63 @@ public class RenderGlobalTrack {
     // 使用vCache1、vCache2、vCache3、vCache4
     private static void renderTrackLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         GlobalCameraTrack track = getTrack();
+        ArrayList<CameraPoint> points = track.getPoints();
 
-        if (track.getCount() > 2) {
-            for (int i = 1, c = track.getCount(); i < c; i++) {
-                CameraPoint p1 = track.getPoint(i - 1);
-                CameraPoint p2 = track.getPoint(i);
-                final Vector3f v1 = V_CACHE_1.set(p1.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
-                final Vector3f v2 = V_CACHE_2.set(p2.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
+        if (points.size() < 2) {
+            return;
+        }
 
-                switch (p2.getType()) {
-                    case LINEAR -> addLine(buffer, last, v1, v2, 0xffffffff);
-                    case SMOOTH -> {
-                        Vector3f v0;
-                        Vector3f v3;
+        for (int i = 1, c = points.size(); i < c; i++) {
+            CameraPoint p1 = points.get(i - 1);
+            CameraPoint p2 = points.get(i);
+            final Vector3f v1 = V_CACHE_1.set(p1.getPosition()).sub(CAMERA_CACHE);
+            final Vector3f v2 = V_CACHE_2.set(p2.getPosition()).sub(CAMERA_CACHE);
 
-                        if (i > 1) {
-                            CameraPoint p = track.getPoint(i - 2);
-                            v0 = V_CACHE_3.set(p.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
-                        } else {
-                            v0 = v1;
-                        }
+            switch (p2.getType()) {
+                case LINEAR -> addLine(buffer, last, v1, v2, 0xffffffff);
+                case SMOOTH -> {
+                    Vector3f v0;
+                    Vector3f v3;
 
-                        if (i < c - 1) {
-                            CameraPoint p = track.getPoint(i + 1);
-                            v3 = V_CACHE_4.set(p.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
-                        } else {
-                            v3 = v2;
-                        }
-
-                        addSmoothLine(buffer, last, v0, v1, v2, v3, 0xffffffff);
+                    if (i > 1) {
+                        CameraPoint p = points.get(i - 2);
+                        v0 = V_CACHE_3.set(p.getPosition()).sub(CAMERA_CACHE);
+                    } else {
+                        v0 = v1;
                     }
-                    case BEZIER ->
-                            addBezierLine(buffer, last, v1, V_CACHE_3.set(p1.getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), V_CACHE_4.set(p2.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), v2, 0xffffffff);
-                    case STEP -> addLine(buffer, last, v1, v2, 0xff7f7f7f);
+
+                    if (i < c - 1) {
+                        CameraPoint p = points.get(i + 1);
+                        v3 = V_CACHE_4.set(p.getPosition()).sub(CAMERA_CACHE);
+                    } else {
+                        v3 = v2;
+                    }
+
+                    addSmoothLine(buffer, last, v0, v1, v2, v3, 0xffffffff);
                 }
+                case BEZIER ->
+                        addBezierLine(buffer, last, v1, V_CACHE_3.set(p1.getRightBezierControl()).sub(CAMERA_CACHE), V_CACHE_4.set(p2.getLeftBezierControl()).sub(CAMERA_CACHE), v2, 0xffffffff);
+                case STEP -> addLine(buffer, last, v1, v2, 0xff7f7f7f);
             }
         }
     }
 
     // 使用vCache1、vCache2
     private static void renderMoveLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        GlobalCameraTrack track = getTrack();
-        int selectedIndex = selected.getPointIndex();
+        int selectedTime = selected.getPointTime();
 
-        if (selectedIndex < 0) {
+        if (selectedTime < 0) {
             return;
         }
 
         // 选中后显示移动用箭头的线
-        Vector3f pos;
+        Vector3f p = selected.getPosition();
 
-        switch (selected.getControl()) {
-            case LEFT -> {
-                CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                pos = V_CACHE_1.set(selectedPoint.getLeftBezierControl());
-            }
-            case RIGHT -> {
-                CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                pos = V_CACHE_1.set(selectedPoint.getRightBezierControl());
-            }
-            case NONE -> {
-                CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                pos = V_CACHE_1.set(selectedPoint.getPosition());
-            }
-            case null, default -> pos = V_CACHE_1.zero();
-        }
+        if (p == null) return;
 
-        pos.sub(RenderGlobalTrack.CAMERA_CACHE);
+        Vector3f pos = V_CACHE_1.set(p);
+
+        pos.sub(CAMERA_CACHE);
         int xColor = X_COLOR,
                 yColor = Y_COLOR,
                 zColor = Z_COLOR;
@@ -175,26 +167,29 @@ public class RenderGlobalTrack {
 
     // 使用vCache1、vCache2
     private static void renderBezierLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        int selectedIndex = selected.getPointIndex();
+        int selectedTime = selected.getPointTime();
         GlobalCameraTrack track = getTrack();
 
-        if (selectedIndex <= 0) {
+        if (selectedTime <= 0) {
             return;
         }
 
         //渲染被选中点的额外线条（贝塞尔控制点连接线）
-        CameraPoint selectedPoint = track.getPoint(selectedIndex);
+        CameraPoint selectedPoint = track.getPoint(selectedTime);
 
-        if (selectedPoint.getType() != PointInterpolationType.BEZIER) {
+        if (selectedPoint == null || selectedPoint.getType() != PointInterpolationType.BEZIER) {
             return;
         }
 
-        Vector3f selectedPos = V_CACHE_1.set(selectedPoint.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
-        Vector3f left = V_CACHE_2.set(selectedPoint.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE);
+        Vector3f selectedPos = V_CACHE_1.set(selectedPoint.getPosition()).sub(CAMERA_CACHE);
+        Vector3f left = V_CACHE_2.set(selectedPoint.getLeftBezierControl()).sub(CAMERA_CACHE);
         addLine(buffer, last, selectedPos, left, 0x7f98FB98);
-        CameraPoint pre = track.getPoint(selectedIndex - 1);
-        Vector3f prePos = V_CACHE_1.set(pre.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE);
-        Vector3f right = V_CACHE_2.set(pre.getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE);
+        CameraPoint pre = track.getPrePoint(selectedTime);
+
+        if (pre == null) return;
+
+        Vector3f prePos = V_CACHE_1.set(pre.getPosition()).sub(CAMERA_CACHE);
+        Vector3f right = V_CACHE_2.set(pre.getRightBezierControl()).sub(CAMERA_CACHE);
         addLine(buffer, last, prePos, right, 0x7f98FB98);
     }
 
@@ -219,86 +214,64 @@ public class RenderGlobalTrack {
     private static void renderPoint(VertexConsumer buffer, PoseStack.Pose last) {
         GlobalCameraTrack track = getTrack();
 
-        for (int i = 0; i < track.getCount(); i++) {
-            CameraPoint point = track.getPoint(i);
-            addPoint(buffer, last, V_CACHE_1.set(point.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.1f, 0xff000000);
+        for (CameraPoint point : track.getPoints()) {
+            addPoint(buffer, last, V_CACHE_1.set(point.getPosition()).sub(CAMERA_CACHE), 0.1f, 0xff000000);
         }
     }
 
     // 使用vCache1
     private static void renderBezierPoint(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        int selectedIndex = selected.getPointIndex();
+        int selectedTime = selected.getPointTime();
+
+        if (selectedTime < 1) return;
+
         GlobalCameraTrack track = getTrack();
+        CameraPoint selectedPoint = track.getPoint(selectedTime);
 
-        // 被选中点的额外点
-        if (selectedIndex >= 0) {
-            CameraPoint selectedPoint = track.getPoint(selectedIndex);
+        if (selectedPoint == null || selectedPoint.getType() != PointInterpolationType.BEZIER) return;
 
-            // 显示贝塞尔控制点
-            if (selectedIndex > 0 && selectedPoint.getType() == PointInterpolationType.BEZIER) {
-                addPoint(buffer, last, V_CACHE_1.set(track.getPoint(selectedIndex - 1).getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.05f, 0x7f98FB98);
-                addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.05f, 0x7f98FB98);
-            }
-        }
+        CameraPoint prePoint = track.getPrePoint(selectedTime);
+
+        if (prePoint == null) return;
+
+        // 显示贝塞尔控制点
+        addPoint(buffer, last, V_CACHE_1.set(prePoint.getRightBezierControl()).sub(CAMERA_CACHE), 0.05f, 0x7f98FB98);
+        addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getLeftBezierControl()).sub(CAMERA_CACHE), 0.05f, 0x7f98FB98);
     }
 
     // 使用vCache1
     private static void renderSelectedPoint(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        int selectedIndex = selected.getPointIndex();
-        GlobalCameraTrack track = getTrack();
+        Vector3f pos = selected.getPosition();
 
-        if (selectedIndex >= 0) {
-            CameraPoint selectedPoint = track.getPoint(selectedIndex);
+        if (pos == null) return;
 
-            switch (selected.getControl()) {
-                case LEFT ->
-                        addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getLeftBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.07f, SELECTED_COLOR_TRANSPARENT);
-                case RIGHT ->
-                        addPoint(buffer, last, V_CACHE_1.set(track.getPoint(selectedIndex - 1).getRightBezierControl()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.07f, SELECTED_COLOR_TRANSPARENT);
-                case NONE ->
-                        addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getPosition()).sub(RenderGlobalTrack.CAMERA_CACHE), 0.12f, SELECTED_COLOR_TRANSPARENT);
-            }
+        switch (selected.getControl()) {
+            case LEFT, RIGHT ->
+                    addPoint(buffer, last, V_CACHE_1.set(pos).sub(CAMERA_CACHE), 0.07f, SELECTED_COLOR_TRANSPARENT);
+            case NONE ->
+                    addPoint(buffer, last, V_CACHE_1.set(pos).sub(CAMERA_CACHE), 0.12f, SELECTED_COLOR_TRANSPARENT);
         }
     }
 
     // 使用vCache1
     private static void renderArrowhead(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        int selectedIndex = selected.getPointIndex();
+        Vector3f pos = selected.getPosition();
 
-        if (selectedIndex >= 0) {
-            GlobalCameraTrack track = getTrack();
-            Vector3f pos;
+        if (pos == null) return;
 
-            switch (selected.getControl()) {
-                case LEFT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = V_CACHE_1.set(selectedPoint.getLeftBezierControl());
-                }
-                case RIGHT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                    pos = V_CACHE_1.set(selectedPoint.getRightBezierControl());
-                }
-                case NONE -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = V_CACHE_1.set(selectedPoint.getPosition());
-                }
-                case null, default -> pos = V_CACHE_1.zero();
-            }
+        pos = V_CACHE_1.set(pos).sub(CAMERA_CACHE);
+        int xColor = X_COLOR,
+                yColor = Y_COLOR,
+                zColor = Z_COLOR;
 
-            pos.sub(RenderGlobalTrack.CAMERA_CACHE);
-            int xColor = X_COLOR,
-                    yColor = Y_COLOR,
-                    zColor = Z_COLOR;
-
-            // 选中变色
-            switch (getMoveMode().getMoveType()) {
-                case X -> xColor = SELECTED_COLOR;
-                case Y -> yColor = SELECTED_COLOR;
-                case Z -> zColor = SELECTED_COLOR;
-            }
-
-            addArrowhead(buffer, last, pos, xColor, yColor, zColor);
+        // 选中变色
+        switch (getMoveMode().getMoveType()) {
+            case X -> xColor = SELECTED_COLOR;
+            case Y -> yColor = SELECTED_COLOR;
+            case Z -> zColor = SELECTED_COLOR;
         }
+
+        addArrowhead(buffer, last, pos, xColor, yColor, zColor);
     }
 
     private static void renderQuads(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last) {
@@ -316,41 +289,23 @@ public class RenderGlobalTrack {
 
     // 使用vCache1
     private static void renderMoveSlice(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        int selectedIndex = selected.getPointIndex();
+        Vector3f pos = selected.getPosition();
 
-        if (selectedIndex >= 0) {
-            GlobalCameraTrack track = getTrack();
-            Vector3f pos;
+        if (pos == null) return;
 
-            switch (selected.getControl()) {
-                case LEFT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = V_CACHE_1.set(selectedPoint.getLeftBezierControl());
-                }
-                case RIGHT -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex - 1);
-                    pos = V_CACHE_1.set(selectedPoint.getRightBezierControl());
-                }
-                case NONE -> {
-                    CameraPoint selectedPoint = track.getPoint(selectedIndex);
-                    pos = V_CACHE_1.set(selectedPoint.getPosition());
-                }
-                case null, default -> pos = V_CACHE_1.zero();
-            }
+        pos = V_CACHE_1.set(pos).sub(CAMERA_CACHE);
+        int xyColor = Z_COLOR_TRANSPARENT,
+                yzColor = X_COLOR_TRANSPARENT,
+                xzColor = Y_COLOR_TRANSPARENT;
 
-            int xyColor = Z_COLOR_TRANSPARENT,
-                    yzColor = X_COLOR_TRANSPARENT,
-                    xzColor = Y_COLOR_TRANSPARENT;
-
-            // 选中变色
-            switch (getMoveMode().getMoveType()) {
-                case XY -> xyColor = SELECTED_COLOR_TRANSPARENT;
-                case YZ -> yzColor = SELECTED_COLOR_TRANSPARENT;
-                case XZ -> xzColor = SELECTED_COLOR_TRANSPARENT;
-            }
-
-            addSlice(buffer, last, pos.sub(RenderGlobalTrack.CAMERA_CACHE), xyColor, yzColor, xzColor);
+        // 选中变色
+        switch (getMoveMode().getMoveType()) {
+            case XY -> xyColor = SELECTED_COLOR_TRANSPARENT;
+            case YZ -> yzColor = SELECTED_COLOR_TRANSPARENT;
+            case XZ -> xzColor = SELECTED_COLOR_TRANSPARENT;
         }
+
+        addSlice(buffer, last, pos, xyColor, yzColor, xzColor);
     }
 
     // 使用vCache5

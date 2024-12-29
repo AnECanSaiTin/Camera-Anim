@@ -1,6 +1,7 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
+import cn.anecansaitin.cameraanim.client.ClientUtil;
 import cn.anecansaitin.cameraanim.client.ModKeyMapping;
 import cn.anecansaitin.cameraanim.client.TrackCache;
 import cn.anecansaitin.cameraanim.client.gui.screen.PointSettingScreen;
@@ -24,15 +25,19 @@ public class ModKeyClicked {
         }
 
         while (ModKeyMapping.EDIT_MODE.get().consumeClick()) {
-            TrackCache.EDIT = !TrackCache.EDIT;
+            if (ClientUtil.player().isCreative()) {
+                TrackCache.EDIT = !TrackCache.EDIT;
+            }
         }
 
         while (ModKeyMapping.VIEW_MODE.get().consumeClick()) {
-            TrackCache.VIEW = !TrackCache.VIEW;
+            if (ClientUtil.player().isCreative()) {
+                TrackCache.VIEW = !TrackCache.VIEW;
+            }
         }
 
         while (ModKeyMapping.POINT_SETTING.get().consumeClick()) {
-            if (!TrackCache.EDIT || TrackCache.getSelectedPoint().getPointIndex() < 0) {
+            if (!TrackCache.EDIT || TrackCache.getSelectedPoint().getPointTime() < 0) {
                 continue;
             }
 
