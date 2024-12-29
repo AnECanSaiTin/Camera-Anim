@@ -44,6 +44,15 @@ public class ModKeyMapping {
                     "key.categories." + CameraAnim.MODID
             ));
 
+    public static final Lazy<KeyMapping> POINT_SETTING = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".point_setting",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
     private static Lazy<KeyMapping> register(KeyMapping key) {
         Lazy<KeyMapping> lazy = Lazy.of(() -> key);
         list.add(lazy);

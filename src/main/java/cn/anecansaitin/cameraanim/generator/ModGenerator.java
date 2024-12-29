@@ -10,7 +10,7 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 public class ModGenerator {
     @SubscribeEvent
     public static void gatherData(GatherDataEvent event) {
-        event.addProvider(event.includeServer(), new ModLangProvider.ZhCn(event.getGenerator().getPackOutput()));
-        event.addProvider(event.includeServer(), new ModLangProvider.EnUs(event.getGenerator().getPackOutput()));
+        event.addProvider(event.includeServer(), new ModLangProvider(event.getGenerator().getPackOutput(), "zh_cn", true));
+        event.addProvider(event.includeServer(), new ModLangProvider(event.getGenerator().getPackOutput(), "en_us", false));
     }
 }

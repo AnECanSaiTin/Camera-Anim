@@ -169,7 +169,7 @@ public class TrackCache {
         private int pointIndex = -1;
         private ControlType control = ControlType.NONE;
 
-        private void setSelected(int pointIndex) {
+        public void setSelected(int pointIndex) {
             this.pointIndex = pointIndex;
             control = ControlType.NONE;
         }

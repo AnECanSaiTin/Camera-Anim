@@ -1,6 +1,22 @@
 {
+  "camera_anim.point_interpolation_type.bezier": "贝塞尔",
+  "camera_anim.point_interpolation_type.linear": "线性",
+  "camera_anim.point_interpolation_type.smooth": "平滑",
+  "camera_anim.point_interpolation_type.step": "步",
+  "gui.camera_anim.point_setting.pos": "坐标",
+  "gui.camera_anim.point_setting.pos_error": "坐标格式错误",
+  "gui.camera_anim.point_setting.rot": "旋转",
+  "gui.camera_anim.point_setting.rot_error": "旋转格式错误",
+  "gui.camera_anim.point_setting.save": "保存",
+  "gui.camera_anim.point_setting.time": "时间",
+  "gui.camera_anim.point_setting.time_error": "时间格式错误",
+  "gui.camera_anim.point_setting.tip": "Gui 暂未设计完毕，当前为临时措施",
+  "gui.camera_anim.point_setting.type": "类型",
+  "gui.camera_anim.point_setting.zoom": "缩放",
+  "gui.camera_anim.point_setting.zoom_error": "缩放格式错误",
   "key.camera_anim.add_global_camera_point": "添加全局相机点",
   "key.camera_anim.edit_mode": "编辑模式",
+  "key.camera_anim.point_setting": "设置点属性",
   "key.camera_anim.view_mode": "查看模式",
   "key.categories.camera_anim": "相机大师"
 }

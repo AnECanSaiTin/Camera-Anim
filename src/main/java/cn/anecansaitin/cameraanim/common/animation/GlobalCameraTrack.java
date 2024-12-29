@@ -28,10 +28,11 @@ public class GlobalCameraTrack {
     /// 把点加入到指定时间
     ///
     /// 相同时间点进行覆盖
-    public void add(int time, CameraPoint point) {
+    public int add(int time, CameraPoint point) {
         if (timeLine.isEmpty()) {
             timeLine.add(time);
             points.add(point);
+            return 0;
         } else {
             int left = 0;
             int right = timeLine.size() - 1;
@@ -59,6 +60,8 @@ public class GlobalCameraTrack {
                 timeLine.add(left, time);
                 updateBezier(left);
             }
+
+            return left;
         }
     }
 
@@ -76,7 +79,7 @@ public class GlobalCameraTrack {
     }
 
     /// 更新控制点
-    private void updateBezier(int index) {
+    public void updateBezier(int index) {
         CameraPoint point = points.get(index);
 
         if (index > 0 && point.getType() == PointInterpolationType.BEZIER) {
@@ -123,6 +126,10 @@ public class GlobalCameraTrack {
         return timeLine.getInt(index);
     }
 
+    public void setTime(int index, int time) {
+        timeLine.set(index, time);
+    }
+
     public int getCount() {
         return points.size();
     }
@@ -140,7 +147,8 @@ public class GlobalCameraTrack {
         }
 
         @Override
-        public void add(int time, CameraPoint point) {
+        public int add(int time, CameraPoint point) {
+            return -1;
         }
 
         @Override

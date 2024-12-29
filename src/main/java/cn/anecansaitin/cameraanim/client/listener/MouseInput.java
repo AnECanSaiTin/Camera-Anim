@@ -2,6 +2,7 @@ package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.client.TrackCache;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -14,6 +15,10 @@ import static cn.anecansaitin.cameraanim.client.ClientUtil.*;
 public class MouseInput {
     @SubscribeEvent
     public static void onMouseReleased(InputEvent.MouseButton.Pre event) {
+        if (Minecraft.getInstance().screen != null) {
+            return;
+        }
+
         switch (event.getButton()) {
             case GLFW.GLFW_MOUSE_BUTTON_LEFT -> {
                 switch (event.getAction()) {

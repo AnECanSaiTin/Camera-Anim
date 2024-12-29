@@ -3,6 +3,7 @@ package cn.anecansaitin.cameraanim.client.listener;
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.client.ModKeyMapping;
 import cn.anecansaitin.cameraanim.client.TrackCache;
+import cn.anecansaitin.cameraanim.client.gui.screen.PointSettingScreen;
 import cn.anecansaitin.cameraanim.common.animation.CameraPoint;
 import cn.anecansaitin.cameraanim.common.animation.PointInterpolationType;
 import net.minecraft.client.Camera;
@@ -28,6 +29,14 @@ public class ModKeyClicked {
 
         while (ModKeyMapping.VIEW_MODE.get().consumeClick()) {
             TrackCache.VIEW = !TrackCache.VIEW;
+        }
+
+        while (ModKeyMapping.POINT_SETTING.get().consumeClick()) {
+            if (!TrackCache.EDIT || TrackCache.getSelectedPoint().getPointIndex() < 0) {
+                continue;
+            }
+
+            Minecraft.getInstance().setScreen(new PointSettingScreen());
         }
     }
 }

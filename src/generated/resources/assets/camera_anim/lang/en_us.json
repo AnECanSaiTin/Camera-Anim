@@ -1,6 +1,22 @@
 {
+  "camera_anim.point_interpolation_type.bezier": "Bezier",
+  "camera_anim.point_interpolation_type.linear": "Linear",
+  "camera_anim.point_interpolation_type.smooth": "Smooth",
+  "camera_anim.point_interpolation_type.step": "Step",
+  "gui.camera_anim.point_setting.pos": "Pos",
+  "gui.camera_anim.point_setting.pos_error": "Pos Format Error",
+  "gui.camera_anim.point_setting.rot": "Rot",
+  "gui.camera_anim.point_setting.rot_error": "Rot Format Error",
+  "gui.camera_anim.point_setting.save": "Save",
+  "gui.camera_anim.point_setting.time": "Time",
+  "gui.camera_anim.point_setting.time_error": "Time Format Error",
+  "gui.camera_anim.point_setting.tip": "Gui is not designed yet, this is a temporary measure",
+  "gui.camera_anim.point_setting.type": "Type",
+  "gui.camera_anim.point_setting.zoom": "Zoom",
+  "gui.camera_anim.point_setting.zoom_error": "Zoom Format Error",
   "key.camera_anim.add_global_camera_point": "Add Global Camera Point",
   "key.camera_anim.edit_mode": "Edit Mode",
+  "key.camera_anim.point_setting": "Point Setting",
   "key.camera_anim.view_mode": "View Mode",
   "key.categories.camera_anim": "Camera Anim"
 }
