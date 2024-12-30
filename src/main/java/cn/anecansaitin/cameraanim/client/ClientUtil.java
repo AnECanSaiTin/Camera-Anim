@@ -44,4 +44,8 @@ public final class ClientUtil {
     public static float playerXRot() {
         return Mth.wrapDegrees(player().getXRot());
     }
+
+    public static boolean gamePaused() {
+        return Minecraft.getInstance().isPaused();
+    }
 }

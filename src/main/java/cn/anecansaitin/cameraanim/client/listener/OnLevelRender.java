@@ -2,21 +2,27 @@ package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.InterpolationMath;
+import cn.anecansaitin.cameraanim.client.Animator;
+import cn.anecansaitin.cameraanim.client.ClientUtil;
 import cn.anecansaitin.cameraanim.client.TrackCache;
 import cn.anecansaitin.cameraanim.common.animation.CameraPoint;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraTrack;
 import cn.anecansaitin.cameraanim.common.animation.PointInterpolationType;
+import cn.anecansaitin.freecameraapi.CameraModifierManager;
+import cn.anecansaitin.freecameraapi.ICameraModifier;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -24,8 +30,9 @@ import java.util.ArrayList;
 import static cn.anecansaitin.cameraanim.client.TrackCache.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
-public class RenderGlobalTrack {
-    private static final int X_COLOR = 0xffff1242,
+public class OnLevelRender {
+    private static final int
+            X_COLOR = 0xffff1242,
             Y_COLOR = 0xff26ec45,
             Z_COLOR = 0xff0894ed,
             X_COLOR_TRANSPARENT = 0x7fff1242,
@@ -33,18 +40,28 @@ public class RenderGlobalTrack {
             Z_COLOR_TRANSPARENT = 0x7f0894ed,
             SELECTED_COLOR = 0xff3e90ff,
             SELECTED_COLOR_TRANSPARENT = 0x7f3e90ff;
-    private static final Vector3f V_CACHE_1 = new Vector3f();
-    private static final Vector3f V_CACHE_2 = new Vector3f();
-    private static final Vector3f V_CACHE_3 = new Vector3f();
-    private static final Vector3f V_CACHE_4 = new Vector3f();
-    private static final Vector3f V_CACHE_5 = new Vector3f();
-    private static final Vector3f V_CACHE_6 = new Vector3f();
-    private static final Vector3f V_CACHE_7 = new Vector3f();
-    private static final Vector3f CAMERA_CACHE = new Vector3f();
+    private static final Vector3f
+            V_CACHE_1 = new Vector3f(),
+            V_CACHE_2 = new Vector3f(),
+            V_CACHE_3 = new Vector3f(),
+            V_CACHE_4 = new Vector3f(),
+            V_CACHE_5 = new Vector3f(),
+            V_CACHE_6 = new Vector3f(),
+            V_CACHE_7 = new Vector3f(),
+            CAMERA_CACHE = new Vector3f();
+    private static final Quaternionf Q_CACHE = new Quaternionf();
 
     @SubscribeEvent
     public static void onRender(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(TrackCache.VIEW || TrackCache.EDIT) || getTrack().getPoints().isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(TrackCache.VIEW || TrackCache.EDIT)) {
+            return;
+        }
+
+        if (!ClientUtil.gamePaused()) {
+            setupCamera();
+        }
+
+        if (getTrack().getPoints().isEmpty()) {
             return;
         }
 
@@ -68,6 +85,35 @@ public class RenderGlobalTrack {
         RenderSystem.disableDepthTest();
     }
 
+    private static final ICameraModifier modifier = CameraModifierManager
+            .createModifier(CameraAnim.MODID, true)
+            .enableFov()
+            .enablePos()
+            .enableRotation()
+            .enableGlobalMode();
+
+    private static final Vector3f POS = new Vector3f();
+    private static final Vector3f ROT = new Vector3f();
+    private static final float[] FOV = new float[1];
+
+    private static void setupCamera() {
+        Animator animator = Animator.INSTANCE;
+
+        if (!animator.isPreview()) {
+            modifier.disable();
+            return;
+        }
+
+        if (!animator.getCameraInfo(POS, ROT, FOV)) {
+            return;
+        }
+
+        modifier.enable()
+                .setPos(POS.x, POS.y, POS.z)
+                .setRotationYXZ(ROT)
+                .setFov(FOV[0]);
+    }
+
     private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose) {
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
         // 轨迹
@@ -80,7 +126,45 @@ public class RenderGlobalTrack {
                     renderMoveLine(selected, buffer, pose);
         }
 
+        renderCamera(pose, buffer);
+
         bufferSource.endBatch(RenderType.LINES);
+    }
+
+    private static void renderCamera(PoseStack.Pose pose, VertexConsumer buffer) {
+        Animator animator = Animator.INSTANCE;
+        Q_CACHE.set(0,0,0,1).rotationYXZ(ROT.y, ROT.x, ROT.z);
+
+        if (!animator.isPreview()) {
+            if (animator.getCameraInfo(POS, ROT, FOV)) {
+                ROT.mul(Mth.DEG_TO_RAD);
+
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+            }
+        }
     }
 
     // 使用vCache1、vCache2、vCache3、vCache4

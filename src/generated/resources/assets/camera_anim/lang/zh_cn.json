@@ -15,8 +15,14 @@
   "gui.camera_anim.point_setting.zoom": "缩放",
   "gui.camera_anim.point_setting.zoom_error": "缩放格式错误",
   "key.camera_anim.add_global_camera_point": "添加全局相机点",
+  "key.camera_anim.back": "后退",
   "key.camera_anim.edit_mode": "编辑模式",
+  "key.camera_anim.forward": "前进",
+  "key.camera_anim.play": "播放",
   "key.camera_anim.point_setting": "设置点属性",
+  "key.camera_anim.preview_mode": "预览模式",
+  "key.camera_anim.reset": "复位",
+  "key.camera_anim.set_camera_time": "设置相机时间",
   "key.camera_anim.view_mode": "查看模式",
   "key.categories.camera_anim": "相机大师"
 }

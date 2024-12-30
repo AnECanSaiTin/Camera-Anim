@@ -53,6 +53,60 @@ public class ModKeyMapping {
                     "key.categories." + CameraAnim.MODID
             ));
 
+    public static final Lazy<KeyMapping> PREVIEW_MODE = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".preview_mode",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> PLAY = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".play",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> RESET = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".reset",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> SET_CAMERA_TIME = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".set_camera_time",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> BACK = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".back",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> FORWARD = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".forward",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
     private static Lazy<KeyMapping> register(KeyMapping key) {
         Lazy<KeyMapping> lazy = Lazy.of(() -> key);
         list.add(lazy);

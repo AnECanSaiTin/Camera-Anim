@@ -21,6 +21,12 @@ public class ModLangProvider extends LanguageProvider {
         add(ModKeyMapping.EDIT_MODE.get().getName(), "编辑模式", "Edit Mode");
         add(ModKeyMapping.VIEW_MODE.get().getName(), "查看模式", "View Mode");
         add(ModKeyMapping.POINT_SETTING.get().getName(), "设置点属性", "Point Setting");
+        add(ModKeyMapping.PREVIEW_MODE.get().getName(), "预览模式", "Preview Mode");
+        add(ModKeyMapping.PLAY.get().getName(), "播放", "Play");
+        add(ModKeyMapping.RESET.get().getName(), "复位", "Reset");
+        add(ModKeyMapping.SET_CAMERA_TIME.get().getName(), "设置相机时间", "Set Camera Time");
+        add(ModKeyMapping.BACK.get().getName(), "后退", "Back");
+        add(ModKeyMapping.FORWARD.get().getName(), "前进", "Forward");
 
         add(PointInterpolationType.STEP.getDisplayNameKey(), "步", "Step");
         add(PointInterpolationType.SMOOTH.getDisplayNameKey(), "平滑", "Smooth");

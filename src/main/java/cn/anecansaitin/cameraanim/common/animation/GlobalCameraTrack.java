@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -149,12 +148,30 @@ public class GlobalCameraTrack {
 
     @Nullable
     public CameraPoint getPrePoint(int time) {
-        return keyframes.lowerEntry(time).getValue();
+        Map.Entry<Integer, CameraPoint> entry = getPreEntry(time);
+        if (entry == null) return null;
+        return entry.getValue();
+    }
+
+    @Nullable
+    public Map.Entry<Integer, CameraPoint> getPreEntry(int time) {
+        return keyframes.lowerEntry(time);
     }
 
     @Nullable
     public CameraPoint getNextPoint(int time) {
+        Map.Entry<Integer, CameraPoint> next = getNextEntry(time);
+        if (next == null) return null;
         return keyframes.higherEntry(time).getValue();
+    }
+
+    @Nullable
+    public Map.Entry<Integer, CameraPoint> getNextEntry(int time) {
+        return keyframes.higherEntry(time);
+    }
+
+    public int getLength() {
+        return keyframes.lastKey();
     }
 
     public void setTime(int oldTime, int newTime) {

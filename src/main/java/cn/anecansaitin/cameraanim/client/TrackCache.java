@@ -25,25 +25,25 @@ public class TrackCache {
     static {
         // 测试数据
         TRACK = new GlobalCameraTrack("test");
-        TRACK.add(new CameraPoint(new Vector3f(1, 56, 3), new Quaternionf(), 70, PointInterpolationType.LINEAR));
-        TRACK.add(new CameraPoint(new Vector3f(3, 56, 5), new Quaternionf(), 70, PointInterpolationType.LINEAR));
-        TRACK.add(new CameraPoint(new Vector3f(7, 56, 8), new Quaternionf(), 70, PointInterpolationType.LINEAR));
-        TRACK.add(new CameraPoint(new Vector3f(5, 56, 0), new Quaternionf(), 70, PointInterpolationType.LINEAR));
+        TRACK.add(new CameraPoint(new Vector3f(1, 56, 3), new Vector3f(), 70, PointInterpolationType.LINEAR));
+        TRACK.add(new CameraPoint(new Vector3f(3, 56, 5), new Vector3f(), 70, PointInterpolationType.LINEAR));
+        TRACK.add(new CameraPoint(new Vector3f(7, 56, 8), new Vector3f(), 70, PointInterpolationType.LINEAR));
+        TRACK.add(new CameraPoint(new Vector3f(5, 56, 0), new Vector3f(), 70, PointInterpolationType.LINEAR));
 
-        TRACK.add(new CameraPoint(new Vector3f(1, 58, 3), new Quaternionf(), 70, PointInterpolationType.SMOOTH));
-        TRACK.add(new CameraPoint(new Vector3f(3, 58, 5), new Quaternionf(), 70, PointInterpolationType.SMOOTH));
-        TRACK.add(new CameraPoint(new Vector3f(5, 58, 0), new Quaternionf(), 70, PointInterpolationType.SMOOTH));
-        TRACK.add(new CameraPoint(new Vector3f(7, 58, 8), new Quaternionf(), 70, PointInterpolationType.SMOOTH));
+        TRACK.add(new CameraPoint(new Vector3f(1, 58, 3), new Vector3f(), 70, PointInterpolationType.SMOOTH));
+        TRACK.add(new CameraPoint(new Vector3f(3, 58, 5), new Vector3f(), 70, PointInterpolationType.SMOOTH));
+        TRACK.add(new CameraPoint(new Vector3f(5, 58, 0), new Vector3f(), 70, PointInterpolationType.SMOOTH));
+        TRACK.add(new CameraPoint(new Vector3f(7, 58, 8), new Vector3f(), 70, PointInterpolationType.SMOOTH));
 
-        TRACK.add(new CameraPoint(new Vector3f(1, 59, 3), new Quaternionf(), 70, PointInterpolationType.STEP));
-        TRACK.add(new CameraPoint(new Vector3f(3, 59, 5), new Quaternionf(), 70, PointInterpolationType.STEP));
-        TRACK.add(new CameraPoint(new Vector3f(5, 59, 0), new Quaternionf(), 70, PointInterpolationType.STEP));
-        TRACK.add(new CameraPoint(new Vector3f(7, 59, 8), new Quaternionf(), 70, PointInterpolationType.STEP));
+        TRACK.add(new CameraPoint(new Vector3f(1, 59, 3), new Vector3f(), 70, PointInterpolationType.STEP));
+        TRACK.add(new CameraPoint(new Vector3f(3, 59, 5), new Vector3f(), 70, PointInterpolationType.STEP));
+        TRACK.add(new CameraPoint(new Vector3f(5, 59, 0), new Vector3f(), 70, PointInterpolationType.STEP));
+        TRACK.add(new CameraPoint(new Vector3f(7, 59, 8), new Vector3f(), 70, PointInterpolationType.STEP));
 
-        CameraPoint b1 = new CameraPoint(new Vector3f(1, 60, 3), new Quaternionf(), 70, PointInterpolationType.BEZIER);
-        CameraPoint b2 = new CameraPoint(new Vector3f(3, 60, 5), new Quaternionf(), 70, PointInterpolationType.BEZIER);
-        CameraPoint b3 = new CameraPoint(new Vector3f(5, 60, 0), new Quaternionf(), 70, PointInterpolationType.BEZIER);
-        CameraPoint b4 = new CameraPoint(new Vector3f(7, 60, 8), new Quaternionf(), 70, PointInterpolationType.BEZIER);
+        CameraPoint b1 = new CameraPoint(new Vector3f(1, 60, 3), new Vector3f(), 70, PointInterpolationType.BEZIER);
+        CameraPoint b2 = new CameraPoint(new Vector3f(3, 60, 5), new Vector3f(), 70, PointInterpolationType.BEZIER);
+        CameraPoint b3 = new CameraPoint(new Vector3f(5, 60, 0), new Vector3f(), 70, PointInterpolationType.BEZIER);
+        CameraPoint b4 = new CameraPoint(new Vector3f(7, 60, 8), new Vector3f(), 70, PointInterpolationType.BEZIER);
         TRACK.add(b1);
         TRACK.add(b2);
         TRACK.add(b3);

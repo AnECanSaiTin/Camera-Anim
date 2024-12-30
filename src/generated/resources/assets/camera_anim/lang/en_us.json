@@ -15,8 +15,14 @@
   "gui.camera_anim.point_setting.zoom": "Zoom",
   "gui.camera_anim.point_setting.zoom_error": "Zoom Format Error",
   "key.camera_anim.add_global_camera_point": "Add Global Camera Point",
+  "key.camera_anim.back": "Back",
   "key.camera_anim.edit_mode": "Edit Mode",
+  "key.camera_anim.forward": "Forward",
+  "key.camera_anim.play": "Play",
   "key.camera_anim.point_setting": "Point Setting",
+  "key.camera_anim.preview_mode": "Preview Mode",
+  "key.camera_anim.reset": "Reset",
+  "key.camera_anim.set_camera_time": "Set Camera Time",
   "key.camera_anim.view_mode": "View Mode",
   "key.categories.camera_anim": "Camera Anim"
 }

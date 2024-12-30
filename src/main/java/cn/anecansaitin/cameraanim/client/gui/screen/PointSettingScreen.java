@@ -16,7 +16,7 @@ import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
 public class PointSettingScreen extends Screen {
-    private final NumberEditBox[] numbers = new NumberEditBox[4];
+    private final NumberEditBox[] numbers = new NumberEditBox[5];
     private CycleButton<PointInterpolationType> type;
     private static final Component POS = Component.translatable("gui.camera_anim.point_setting.pos");
     private static final Component ROT = Component.translatable("gui.camera_anim.point_setting.rot");
@@ -49,15 +49,17 @@ public class PointSettingScreen extends Screen {
             CameraPoint point = track.getPoint(time);
             assert point != null;// pos不为null，则point不为null
             float fov = point.getFov();
-            Vector3f rot = point.getRotation().getEulerAnglesYXZ(new Vector3f()).mul(Mth.RAD_TO_DEG);
+            Vector3f rot = point.getRotation();
             addRenderableOnly(new StringWidget(x + 1, y + 2 + 10, 30, 10, ROT, font));
             numbers[0] = new NumberEditBox(font, x + 37, y + 2 + 10, 50, 10, rot.x, Component.literal("xRot"));
             addRenderableWidget(numbers[0]);
             numbers[1] = new NumberEditBox(font, x + 92, y + 2 + 10, 50, 10, rot.y, Component.literal("yRot"));
             addRenderableWidget(numbers[1]);
-            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10, 30, 10, ZOOM, font));
-            numbers[2] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10, 50, 10, fov, Component.literal("zoom"));
+            numbers[2] = new NumberEditBox(font, x + 147, y + 2 + 10, 50, 10, rot.z, Component.literal("zRot"));
             addRenderableWidget(numbers[2]);
+            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10, 30, 10, ZOOM, font));
+            numbers[3] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10, 50, 10, fov, Component.literal("zoom"));
+            addRenderableWidget(numbers[3]);
             type = CycleButton
                     .builder(PointInterpolationType::getDisplayName)
                     .withValues(PointInterpolationType.values())
@@ -66,8 +68,8 @@ public class PointSettingScreen extends Screen {
                     });
             addRenderableWidget(type);
             addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10 + 10 + 11, 30, 10, TIME, font));
-            numbers[3] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10 + 10 + 11, 50, 10, time, Component.literal("time"));
-            addRenderableWidget(numbers[3]);
+            numbers[4] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10 + 10 + 11, 50, 10, time, Component.literal("time"));
+            addRenderableWidget(numbers[4]);
         }
 
         addRenderableOnly(new StringWidget(x + 1, y + 2, 30, 10, POS, font));
@@ -106,16 +108,17 @@ public class PointSettingScreen extends Screen {
                             pos.set(xn, yn, zn);
 
                             try {
-                                float xRot = Float.parseFloat(numbers[0].getValue()) * Mth.DEG_TO_RAD;
-                                float yRot = Float.parseFloat(numbers[1].getValue()) * Mth.DEG_TO_RAD;
-                                point.getRotation().rotationYXZ(yRot, xRot, 0);
+                                float xRot = Float.parseFloat(numbers[0].getValue());
+                                float yRot = Float.parseFloat(numbers[1].getValue());
+                                float zRot = Float.parseFloat(numbers[2].getValue());
+                                point.getRotation().set(xRot, yRot, zRot);
                             } catch (NumberFormatException e) {
                                 info.setMessage(ROT_ERROR);
                                 return;
                             }
 
                             try {
-                                point.setFov(Float.parseFloat(numbers[2].getValue()));
+                                point.setFov(Float.parseFloat(numbers[3].getValue()));
                             } catch (NumberFormatException e) {
                                 info.setMessage(ZOOM_ERROR);
                                 return;
@@ -125,7 +128,7 @@ public class PointSettingScreen extends Screen {
                             track.updateBezier(time);
 
                             try {
-                                int newTime = Integer.parseInt(numbers[3].getValue());
+                                int newTime = Integer.parseInt(numbers[4].getValue());
                                 track.setTime(time, newTime);
                                 onClose();
                             } catch (NumberFormatException e) {
