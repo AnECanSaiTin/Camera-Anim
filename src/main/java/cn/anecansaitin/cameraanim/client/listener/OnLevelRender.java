@@ -76,12 +76,15 @@ public class OnLevelRender {
         CAMERA_CACHE.set(p.x, p.y, p.z);
         TrackCache.SelectedPoint selected = getSelectedPoint();
 
+        if (!Animator.INSTANCE.isPreview()) {
+            // 连续三角面
+            renderFilledBox(selected, bufferSource, last);
+            // 面片
+            renderQuads(selected, bufferSource, last);
+        }
         // 线条
         renderLines(selected, bufferSource, last);
-        // 连续三角面
-        renderFilledBox(selected, bufferSource, last);
-        // 面片
-        renderQuads(selected, bufferSource, last);
+
         RenderSystem.disableDepthTest();
     }
 
@@ -116,15 +119,18 @@ public class OnLevelRender {
 
     private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose) {
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
-        // 轨迹
-        renderTrackLine(selected, buffer, pose);
-        // 贝塞尔曲线控制点连接线
-        renderBezierLine(selected, buffer, pose);
+        if (!Animator.INSTANCE.isPreview()) {
+            // 轨迹
+            renderTrackLine(selected, buffer, pose);
+            // 贝塞尔曲线控制点连接线
+            renderBezierLine(selected, buffer, pose);
 
-        switch (getMode()) {
-            case MOVE -> // 移动线
-                    renderMoveLine(selected, buffer, pose);
+            switch (getMode()) {
+                case MOVE -> // 移动线
+                        renderMoveLine(selected, buffer, pose);
+            }
         }
+
 
         renderCamera(pose, buffer);
 
@@ -395,8 +401,8 @@ public class OnLevelRender {
     // 使用vCache5
     private static void addLine(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos1, Vector3f pos2, int color) {
         Vector3f normalize = V_CACHE_5.set(pos2).sub(pos1).normalize();
-        buffer.addVertex(pose, pos1).setColor(color).setNormal(pose, normalize);
-        buffer.addVertex(pose, pos2).setColor(color).setNormal(pose, normalize);
+        buffer.addVertex(pose, pos1).setColor(color).setNormal(pose, normalize.x, normalize.y, normalize.z);
+        buffer.addVertex(pose, pos2).setColor(color).setNormal(pose, normalize.x, normalize.y, normalize.z);
     }
 
     // 使用vCache6、vCache7

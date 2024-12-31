@@ -14,5 +14,6 @@ public class CameraAnim {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public CameraAnim(IEventBus modEventBus, ModContainer modContainer) {
+
     }
 }

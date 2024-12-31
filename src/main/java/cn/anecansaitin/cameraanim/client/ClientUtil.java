@@ -14,7 +14,7 @@ public final class ClientUtil {
     }
 
     public static float partialTicks() {
-        return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
+        return Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
     }
 
     public static Vector3f playerEyePos() {

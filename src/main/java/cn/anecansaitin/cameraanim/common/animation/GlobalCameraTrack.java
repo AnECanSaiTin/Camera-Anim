@@ -24,7 +24,7 @@ public class GlobalCameraTrack {
         this.id = id;
     }
 
-    private GlobalCameraTrack(TreeMap<Integer, CameraPoint> keyframes, String id) {
+    public GlobalCameraTrack(TreeMap<Integer, CameraPoint> keyframes, String id) {
         this.keyframes = keyframes;
         this.id = id;
         keyframeMapCache = new Int2ObjectOpenHashMap<>(keyframes);
@@ -60,6 +60,10 @@ public class GlobalCameraTrack {
         }
 
         keyframeListCache.add(point);
+    }
+
+    public TreeMap<Integer, CameraPoint> getKeyframes() {
+        return keyframes;
     }
 
     public Int2ObjectMap.FastEntrySet<CameraPoint> getEntries() {

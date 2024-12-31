@@ -15,6 +15,8 @@
   "gui.camera_anim.point_setting.zoom": "缩放",
   "gui.camera_anim.point_setting.zoom_error": "缩放格式错误",
   "key.camera_anim.add_global_camera_point": "添加全局相机点",
+  "key.camera_anim.save": "保存",
+  "key.camera_anim.load": "加载",
   "key.camera_anim.back": "后退",
   "key.camera_anim.edit_mode": "编辑模式",
   "key.camera_anim.forward": "前进",
