@@ -1,7 +1,6 @@
 package cn.anecansaitin.cameraanim.client;
 
-import cn.anecansaitin.cameraanim.common.animation.CameraPoint;
-import cn.anecansaitin.cameraanim.common.animation.GlobalCameraTrack;
+import cn.anecansaitin.cameraanim.common.animation.*;
 import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
@@ -21,7 +20,7 @@ public class Animator {
             return;
         }
 
-        if (time > TrackCache.getTrack().getLength()) {
+        if (time > PathCache.getTrack().getLength()) {
             reset();
         } else {
             time++;
@@ -58,11 +57,11 @@ public class Animator {
     }
 
     public void forward() {
-        if (time >= TrackCache.getTrack().getLength()) {
+        if (time >= PathCache.getTrack().getLength()) {
             return;
         }
 
-        time = Math.min(TrackCache.getTrack().getLength(), time + 5);
+        time = Math.min(PathCache.getTrack().getLength(), time + 5);
     }
 
     public boolean isPreview() {
@@ -77,79 +76,91 @@ public class Animator {
         return preview && playing;
     }
 
-    public boolean getCameraInfo(Vector3f posDest, Vector3f rotDest, float[] fov) {
+    public boolean prepareCameraInfo(Vector3f posDest, Vector3f rotDest, float[] fov) {
         float partialTicks = isPlaying() ? partialTicks() : 0;
-        GlobalCameraTrack track = TrackCache.getTrack();
-        CameraPoint current = track.getPoint(time);
+        GlobalCameraPath track = PathCache.getTrack();
+        CameraKeyframe current = track.getPoint(time);
 
         if (current == null) {
             // 当前不处于关键帧上
-            Map.Entry<Integer, CameraPoint> preEntry = track.getPreEntry(time);
-            Map.Entry<Integer, CameraPoint> nextEntry = track.getNextEntry(time);
+            Map.Entry<Integer, CameraKeyframe> preEntry = track.getPreEntry(time);
+            Map.Entry<Integer, CameraKeyframe> nextEntry = track.getNextEntry(time);
             float t;
 
             if (preEntry == null) {
                 if (nextEntry == null) return false;
-                posDest.set(nextEntry.getValue().getPosition());
-                rotDest.set(nextEntry.getValue().getRotation());
+                posDest.set(nextEntry.getValue().getPos());
+                rotDest.set(nextEntry.getValue().getRot());
                 return true;
             } else {
                 if (nextEntry == null) {
-                    posDest.set(preEntry.getValue().getPosition());
-                    rotDest.set(preEntry.getValue().getRotation());
+                    posDest.set(preEntry.getValue().getPos());
+                    rotDest.set(preEntry.getValue().getRot());
                     return true;
                 } else {
                     t = (partialTicks + time - preEntry.getKey()) / (nextEntry.getKey() - preEntry.getKey());
                 }
             }
 
-            CameraPoint pre = preEntry.getValue();
-            CameraPoint next = nextEntry.getValue();
+            CameraKeyframe pre = preEntry.getValue();
+            CameraKeyframe next = nextEntry.getValue();
 
-            // todo 这里的插值暂时都是线性，之后需要能设置
+            float t1;
             // 坐标插值
-            switch (next.getType()) {
-                case LINEAR -> {
-                    line(t, pre.getPosition(), next.getPosition(), posDest);
-                }
+            if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
+                t1 = next.getPosBezier().interpolate(t);
+            } else {
+                t1 = t;
+            }
+
+            switch (next.getPathInterpolator()) {
+                case LINEAR -> line(t1, pre.getPos(), next.getPos(), posDest);
                 case SMOOTH -> {
                     Vector3f p0, p3;
-                    Map.Entry<Integer, CameraPoint> prePre = track.getPreEntry(preEntry.getKey());
+                    Map.Entry<Integer, CameraKeyframe> prePre = track.getPreEntry(preEntry.getKey());
 
                     if (prePre == null) {
-                        p0 = pre.getPosition();
+                        p0 = pre.getPos();
                     } else {
-                        p0 = prePre.getValue().getPosition();
+                        p0 = prePre.getValue().getPos();
                     }
 
-                    Map.Entry<Integer, CameraPoint> nextNext = track.getNextEntry(nextEntry.getKey());
+                    Map.Entry<Integer, CameraKeyframe> nextNext = track.getNextEntry(nextEntry.getKey());
 
                     if (nextNext == null) {
-                        p3 = next.getPosition();
+                        p3 = next.getPos();
                     } else {
-                        p3 = nextNext.getValue().getPosition();
+                        p3 = nextNext.getValue().getPos();
                     }
 
-                    catmullRom(t, p0, pre.getPosition(), next.getPosition(), p3, posDest);
+                    catmullRom(t1, p0, pre.getPos(), next.getPos(), p3, posDest);
                 }
-                case BEZIER -> {
-                    bezier(t, pre.getPosition(), pre.getRightBezierControl(), next.getLeftBezierControl(), next.getPosition(), posDest);
-                }
-                case STEP -> {
-                    posDest.set(pre.getPosition());
-                }
+                case BEZIER -> next.getPathBezier().interpolate(t1, pre.getPos(), next.getPos(), posDest);
+                case STEP -> posDest.set(pre.getPos());
             }
 
             // 旋转插值
-            Vector3f preRot = pre.getRotation();
-            Vector3f nextRot = next.getRotation();
-            line(t, preRot, nextRot, rotDest);
+            if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
+                t1 = next.getRotBezier().interpolate(t);
+            } else {
+                t1 = t;
+            }
+
+            Vector3f preRot = pre.getRot();
+            Vector3f nextRot = next.getRot();
+            line(t1, preRot, nextRot, rotDest);
 
             // fov插值
-            fov[0] = Mth.lerp(t, pre.getFov(), next.getFov());
+            if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
+                t1 = next.getRotBezier().interpolate(t);
+            } else {
+                t1 = t;
+            }
+
+            fov[0] = Mth.lerp(t1, pre.getFov(), next.getFov());
         } else {
-            posDest.set(current.getPosition());
-            rotDest.set(current.getRotation());
+            posDest.set(current.getPos());
+            rotDest.set(current.getRot());
             fov[0] = current.getFov();
         }
 

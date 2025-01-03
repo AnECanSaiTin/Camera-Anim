@@ -4,10 +4,11 @@ import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.InterpolationMath;
 import cn.anecansaitin.cameraanim.client.Animator;
 import cn.anecansaitin.cameraanim.client.ClientUtil;
-import cn.anecansaitin.cameraanim.client.TrackCache;
-import cn.anecansaitin.cameraanim.common.animation.CameraPoint;
-import cn.anecansaitin.cameraanim.common.animation.GlobalCameraTrack;
-import cn.anecansaitin.cameraanim.common.animation.PointInterpolationType;
+import cn.anecansaitin.cameraanim.client.PathCache;
+import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
+import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
+import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.Vec3BezierController;
 import cn.anecansaitin.freecameraapi.CameraModifierManager;
 import cn.anecansaitin.freecameraapi.ICameraModifier;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -27,7 +28,7 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 
-import static cn.anecansaitin.cameraanim.client.TrackCache.*;
+import static cn.anecansaitin.cameraanim.client.PathCache.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class OnLevelRender {
@@ -53,7 +54,7 @@ public class OnLevelRender {
 
     @SubscribeEvent
     public static void onRender(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(TrackCache.VIEW || TrackCache.EDIT)) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(PathCache.VIEW || PathCache.EDIT)) {
             return;
         }
 
@@ -61,11 +62,11 @@ public class OnLevelRender {
             setupCamera();
         }
 
-        if (getTrack().getPoints().isEmpty()) {
+        if (getTrack().getPoints().isEmpty() || ClientUtil.hideGui()) {
             return;
         }
 
-        TrackCache.tick();
+        PathCache.tick();
         PoseStack poseStack = event.getPoseStack();
         PoseStack.Pose last = poseStack.last();
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -74,7 +75,7 @@ public class OnLevelRender {
         // 获取相机位置
         Vec3 p = event.getCamera().getPosition();
         CAMERA_CACHE.set(p.x, p.y, p.z);
-        TrackCache.SelectedPoint selected = getSelectedPoint();
+        PathCache.SelectedPoint selected = getSelectedPoint();
 
         // 线条
         renderLines(selected, bufferSource, last);
@@ -104,7 +105,7 @@ public class OnLevelRender {
             return;
         }
 
-        if (!animator.getCameraInfo(POS, ROT, FOV)) {
+        if (!animator.prepareCameraInfo(POS, ROT, FOV)) {
             return;
         }
 
@@ -136,7 +137,8 @@ public class OnLevelRender {
         Q_CACHE.set(0,0,0,1).rotationYXZ(ROT.y, ROT.x, ROT.z);
 
         if (!animator.isPreview()) {
-            if (animator.getCameraInfo(POS, ROT, FOV)) {
+            if (animator.prepareCameraInfo(POS, ROT, FOV)) {
+                ROT.y *= -1;
                 ROT.mul(Mth.DEG_TO_RAD);
 
                 addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
@@ -169,43 +171,45 @@ public class OnLevelRender {
 
     // 使用vCache1、vCache2、vCache3、vCache4
     private static void renderTrackLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        GlobalCameraTrack track = getTrack();
-        ArrayList<CameraPoint> points = track.getPoints();
+        GlobalCameraPath track = getTrack();
+        ArrayList<CameraKeyframe> points = track.getPoints();
 
         if (points.size() < 2) {
             return;
         }
 
         for (int i = 1, c = points.size(); i < c; i++) {
-            CameraPoint p1 = points.get(i - 1);
-            CameraPoint p2 = points.get(i);
-            final Vector3f v1 = V_CACHE_1.set(p1.getPosition()).sub(CAMERA_CACHE);
-            final Vector3f v2 = V_CACHE_2.set(p2.getPosition()).sub(CAMERA_CACHE);
+            CameraKeyframe p1 = points.get(i - 1);
+            CameraKeyframe p2 = points.get(i);
+            final Vector3f v1 = V_CACHE_1.set(p1.getPos()).sub(CAMERA_CACHE);
+            final Vector3f v2 = V_CACHE_2.set(p2.getPos()).sub(CAMERA_CACHE);
 
-            switch (p2.getType()) {
+            switch (p2.getPathInterpolator()) {
                 case LINEAR -> addLine(buffer, last, v1, v2, 0xffffffff);
                 case SMOOTH -> {
                     Vector3f v0;
                     Vector3f v3;
 
                     if (i > 1) {
-                        CameraPoint p = points.get(i - 2);
-                        v0 = V_CACHE_3.set(p.getPosition()).sub(CAMERA_CACHE);
+                        CameraKeyframe p = points.get(i - 2);
+                        v0 = V_CACHE_3.set(p.getPos()).sub(CAMERA_CACHE);
                     } else {
                         v0 = v1;
                     }
 
                     if (i < c - 1) {
-                        CameraPoint p = points.get(i + 1);
-                        v3 = V_CACHE_4.set(p.getPosition()).sub(CAMERA_CACHE);
+                        CameraKeyframe p = points.get(i + 1);
+                        v3 = V_CACHE_4.set(p.getPos()).sub(CAMERA_CACHE);
                     } else {
                         v3 = v2;
                     }
 
                     addSmoothLine(buffer, last, v0, v1, v2, v3, 0xffffffff);
                 }
-                case BEZIER ->
-                        addBezierLine(buffer, last, v1, V_CACHE_3.set(p1.getRightBezierControl()).sub(CAMERA_CACHE), V_CACHE_4.set(p2.getLeftBezierControl()).sub(CAMERA_CACHE), v2, 0xffffffff);
+                case BEZIER -> {
+                    Vec3BezierController controller = p2.getPathBezier();
+                    addBezierLine(buffer, last, v1, V_CACHE_3.set(controller.getLeft()).sub(CAMERA_CACHE), V_CACHE_4.set(controller.getRight()).sub(CAMERA_CACHE), v2, 0xffffffff);
+                }
                 case STEP -> addLine(buffer, last, v1, v2, 0xff7f7f7f);
             }
         }
@@ -252,29 +256,30 @@ public class OnLevelRender {
     // 使用vCache1、vCache2
     private static void renderBezierLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         int selectedTime = selected.getPointTime();
-        GlobalCameraTrack track = getTrack();
+        GlobalCameraPath track = getTrack();
 
         if (selectedTime <= 0) {
             return;
         }
 
         //渲染被选中点的额外线条（贝塞尔控制点连接线）
-        CameraPoint selectedPoint = track.getPoint(selectedTime);
+        CameraKeyframe selectedPoint = track.getPoint(selectedTime);
 
-        if (selectedPoint == null || selectedPoint.getType() != PointInterpolationType.BEZIER) {
+        if (selectedPoint == null || selectedPoint.getPathInterpolator() != PathInterpolator.BEZIER) {
             return;
         }
 
-        Vector3f selectedPos = V_CACHE_1.set(selectedPoint.getPosition()).sub(CAMERA_CACHE);
-        Vector3f left = V_CACHE_2.set(selectedPoint.getLeftBezierControl()).sub(CAMERA_CACHE);
-        addLine(buffer, last, selectedPos, left, 0x7f98FB98);
-        CameraPoint pre = track.getPrePoint(selectedTime);
+        Vec3BezierController controller = selectedPoint.getPathBezier();
+        Vector3f selectedPos = V_CACHE_1.set(selectedPoint.getPos()).sub(CAMERA_CACHE);
+        Vector3f right = V_CACHE_2.set(controller.getRight()).sub(CAMERA_CACHE);
+        addLine(buffer, last, selectedPos, right, 0x7f98FB98);
+        CameraKeyframe pre = track.getPrePoint(selectedTime);
 
         if (pre == null) return;
 
-        Vector3f prePos = V_CACHE_1.set(pre.getPosition()).sub(CAMERA_CACHE);
-        Vector3f right = V_CACHE_2.set(pre.getRightBezierControl()).sub(CAMERA_CACHE);
-        addLine(buffer, last, prePos, right, 0x7f98FB98);
+        Vector3f prePos = V_CACHE_1.set(pre.getPos()).sub(CAMERA_CACHE);
+        Vector3f left = V_CACHE_2.set(controller.getLeft()).sub(CAMERA_CACHE);
+        addLine(buffer, last, prePos, left, 0x7f98FB98);
     }
 
     private static void renderFilledBox(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last) {
@@ -296,10 +301,10 @@ public class OnLevelRender {
 
     // 使用vCache1
     private static void renderPoint(VertexConsumer buffer, PoseStack.Pose last) {
-        GlobalCameraTrack track = getTrack();
+        GlobalCameraPath track = getTrack();
 
-        for (CameraPoint point : track.getPoints()) {
-            addPoint(buffer, last, V_CACHE_1.set(point.getPosition()).sub(CAMERA_CACHE), 0.1f, 0xff000000);
+        for (CameraKeyframe point : track.getPoints()) {
+            addPoint(buffer, last, V_CACHE_1.set(point.getPos()).sub(CAMERA_CACHE), 0.1f, 0xff000000);
         }
     }
 
@@ -309,18 +314,19 @@ public class OnLevelRender {
 
         if (selectedTime < 1) return;
 
-        GlobalCameraTrack track = getTrack();
-        CameraPoint selectedPoint = track.getPoint(selectedTime);
+        GlobalCameraPath track = getTrack();
+        CameraKeyframe selectedPoint = track.getPoint(selectedTime);
 
-        if (selectedPoint == null || selectedPoint.getType() != PointInterpolationType.BEZIER) return;
+        if (selectedPoint == null || selectedPoint.getPathInterpolator() != PathInterpolator.BEZIER) return;
 
-        CameraPoint prePoint = track.getPrePoint(selectedTime);
+        CameraKeyframe prePoint = track.getPrePoint(selectedTime);
 
         if (prePoint == null) return;
 
         // 显示贝塞尔控制点
-        addPoint(buffer, last, V_CACHE_1.set(prePoint.getRightBezierControl()).sub(CAMERA_CACHE), 0.05f, 0x7f98FB98);
-        addPoint(buffer, last, V_CACHE_1.set(selectedPoint.getLeftBezierControl()).sub(CAMERA_CACHE), 0.05f, 0x7f98FB98);
+        Vec3BezierController controller = selectedPoint.getPathBezier();
+        addPoint(buffer, last, V_CACHE_1.set(controller.getLeft()).sub(CAMERA_CACHE), 0.05f, 0x7f98FB98);
+        addPoint(buffer, last, V_CACHE_1.set(controller.getRight()).sub(CAMERA_CACHE), 0.05f, 0x7f98FB98);
     }
 
     // 使用vCache1

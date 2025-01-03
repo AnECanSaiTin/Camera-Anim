@@ -1,6 +1,7 @@
 package cn.anecansaitin.cameraanim.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import org.joml.Vector3f;
@@ -45,7 +46,15 @@ public final class ClientUtil {
         return Mth.wrapDegrees(player().getXRot());
     }
 
+    public static boolean hideGui() {
+        return Minecraft.getInstance().options.hideGui;
+    }
+
     public static boolean gamePaused() {
         return Minecraft.getInstance().isPaused();
+    }
+
+    public static void pushGuiLayer(Screen screen) {
+        Minecraft.getInstance().pushGuiLayer(screen);
     }
 }
