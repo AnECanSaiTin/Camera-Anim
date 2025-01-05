@@ -14,6 +14,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -166,28 +167,28 @@ public class InterpolationSettingScreen extends Screen {
         font.drawInBatch(DISTANCE, -161, 8, 0xffffffff, false, pose.last().pose(), Minecraft.getInstance().renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, 15728880);
         font.drawInBatch("—————————>", -161, 15, 0xffffffff, false, pose.last().pose(), Minecraft.getInstance().renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, 15728880);
         pose.popPose();
-        guiGraphics.drawSpecial((consumer) -> {
-            PoseStack.Pose last = guiGraphics.pose().last();
-            VertexConsumer buffer = consumer.getBuffer(RenderType.LINES);
-            if (typeSwitch.getValue() == TimeInterpolator.BEZIER) {
-                Vector2f pre = vCache2.set(zero),
-                        next;
-                vCache4.set(left).mul(80, -80f).add(zero);
-                vCache5.set(right).mul(80, -80f).add(zero);
 
-                for (int i = 0; i < 20; i++) {
-                    float t = i * 0.05f;
-                    next = InterpolationMath.bezier(t, zero, vCache4, vCache5, one, vCache3);
-                    addLine(buffer, last, pre, next, 0xFFFFFFFF);
-                    pre.set(next);
-                }
+        MultiBufferSource.BufferSource bufferSource = guiGraphics.bufferSource();
+        PoseStack.Pose last = guiGraphics.pose().last();
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
+        if (typeSwitch.getValue() == TimeInterpolator.BEZIER) {
+            Vector2f pre = vCache2.set(zero),
+                    next;
+            vCache4.set(left).mul(80, -80f).add(zero);
+            vCache5.set(right).mul(80, -80f).add(zero);
 
-                addLine(buffer, last, pre, one, 0xFFFFFFFF);
-            } else {
-                addLine(buffer, last, zero, one, 0xFFFFFFFF);
+            for (int i = 0; i < 20; i++) {
+                float t = i * 0.05f;
+                next = InterpolationMath.bezier(t, zero, vCache4, vCache5, one, vCache3);
+                addLine(buffer, last, pre, next, 0xFFFFFFFF);
+                pre.set(next);
             }
-            guiGraphics.flush();
-        });
+
+            addLine(buffer, last, pre, one, 0xFFFFFFFF);
+        } else {
+            addLine(buffer, last, zero, one, 0xFFFFFFFF);
+        }
+        guiGraphics.flush();
     }
 
     private void addLine(VertexConsumer buffer, PoseStack.Pose pose, Vector2f pos1, Vector2f pos2, int color) {
@@ -209,14 +210,13 @@ public class InterpolationSettingScreen extends Screen {
 
         @Override
         protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            guiGraphics.drawSpecial(b -> {
-                PoseStack.Pose last = guiGraphics.pose().last();
-                VertexConsumer buffer = b.getBuffer(RenderType.GUI);
-                buffer.addVertex(last, point.x * 80 + zeroX + 2, point.y * -80 + zeroY + 2, 0).setColor(0xFFc4c4c4);
-                buffer.addVertex(last, point.x * 80 + zeroX + 2, point.y * -80 + zeroY - 2, 0).setColor(0xFFc4c4c4);
-                buffer.addVertex(last, point.x * 80 + zeroX - 2, point.y * -80 + zeroY - 2, 0).setColor(0xFFc4c4c4);
-                buffer.addVertex(last, point.x * 80 + zeroX - 2, point.y * -80 + zeroY + 2, 0).setColor(0xFFc4c4c4);
-            });
+            MultiBufferSource.BufferSource bufferSource = guiGraphics.bufferSource();
+            PoseStack.Pose last = guiGraphics.pose().last();
+            VertexConsumer buffer = bufferSource.getBuffer(RenderType.GUI);
+            buffer.addVertex(last, point.x * 80 + zeroX + 2, point.y * -80 + zeroY + 2, 0).setColor(0xFFc4c4c4);
+            buffer.addVertex(last, point.x * 80 + zeroX + 2, point.y * -80 + zeroY - 2, 0).setColor(0xFFc4c4c4);
+            buffer.addVertex(last, point.x * 80 + zeroX - 2, point.y * -80 + zeroY - 2, 0).setColor(0xFFc4c4c4);
+            buffer.addVertex(last, point.x * 80 + zeroX - 2, point.y * -80 + zeroY + 2, 0).setColor(0xFFc4c4c4);
         }
 
         @Override

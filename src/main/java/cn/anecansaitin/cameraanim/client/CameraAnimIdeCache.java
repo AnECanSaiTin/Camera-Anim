@@ -15,11 +15,11 @@ public class CameraAnimIdeCache {
     public static boolean PREVIEW;
     private static Mode MODE = Mode.MOVE;
     private static final MoveModeData MOVE_DATA = new MoveModeData();
-    private static GlobalCameraPath TRACK = GlobalCameraPath.NULL;
+    private static GlobalCameraPath TRACK = new GlobalCameraPath("new");
     private static final SelectedPoint SELECTED_POINT = new SelectedPoint();
     private static final float BEZIER_PICK_EXPAND = 0.1f;
 
-    static {
+    /*static {
         // 测试数据
         TRACK = new GlobalCameraPath("test");
         TRACK.add(new CameraKeyframe(new Vector3f(1, 56, 3), new Vector3f(), 70, PathInterpolator.LINEAR));
@@ -51,7 +51,7 @@ public class CameraAnimIdeCache {
         b4.getPathBezier().getRight().add(-1, 1, -1);
         b4.setPosTimeInterpolator(TimeInterpolator.BEZIER);
         b4.getPosBezier().easyInOut();
-    }
+    }*/
 
     // 每一帧的更新
     public static void tick() {

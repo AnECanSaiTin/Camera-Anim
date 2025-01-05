@@ -2,6 +2,7 @@ package cn.anecansaitin.cameraanim.generator;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.generator.assest.ModLangProvider;
+import net.minecraft.data.DataGenerator;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
@@ -10,7 +11,8 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 public class ModGenerator {
     @SubscribeEvent
     public static void gatherData(GatherDataEvent event) {
-//        event.addProvider(event.includeServer(), new ModLangProvider(event.getGenerator().getPackOutput(), "zh_cn", true));
-//        event.addProvider(event.includeServer(), new ModLangProvider(event.getGenerator().getPackOutput(), "en_us", false));
+        DataGenerator generator = event.getGenerator();
+        generator.addProvider(event.includeServer(), new ModLangProvider(event.getGenerator().getPackOutput(), "zh_cn", true));
+        generator.addProvider(event.includeServer(), new ModLangProvider(event.getGenerator().getPackOutput(), "en_us", false));
     }
 }

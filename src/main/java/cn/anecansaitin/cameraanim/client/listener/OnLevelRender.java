@@ -91,15 +91,12 @@ public class OnLevelRender {
         CAMERA_CACHE.set(p.x, p.y, p.z);
         SelectedPoint selected = getSelectedPoint();
 
-        if (!Animator.INSTANCE.isPreview()) {
-            // 连续三角面
-            renderFilledBox(selected, bufferSource, last);
-            // 面片
-            renderQuads(selected, bufferSource, last);
-        }
         // 线条
         renderLines(selected, bufferSource, last);
-
+        // 连续三角面
+        renderFilledBox(selected, bufferSource, last);
+        // 面片
+        renderQuads(selected, bufferSource, last);
         RenderSystem.disableDepthTest();
     }
 
@@ -163,18 +160,15 @@ public class OnLevelRender {
 
     private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose) {
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.LINES);
-        if (!Animator.INSTANCE.isPreview()) {
-            // 轨迹
-            renderTrackLine(selected, buffer, pose);
-            // 贝塞尔曲线控制点连接线
-            renderBezierLine(selected, buffer, pose);
+        // 轨迹
+        renderTrackLine(selected, buffer, pose);
+        // 贝塞尔曲线控制点连接线
+        renderBezierLine(selected, buffer, pose);
 
-            switch (getMode()) {
-                case MOVE -> // 移动线
-                        renderMoveLine(selected, buffer, pose);
-            }
+        switch (getMode()) {
+            case MOVE -> // 移动线
+                    renderMoveLine(selected, buffer, pose);
         }
-
 
         renderCamera(pose, buffer);
 

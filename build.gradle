@@ -126,7 +126,7 @@ configurations {
 
 dependencies {
 //    implementation files("libs/freecameraapi-neo-1.21.3-2.1.1.jar")
-    implementation "maven.modrinth:free-camera-api:neo-1.21.3-2.1.1"
+    implementation "maven.modrinth:free-camera-api:neo-1.21-2.1.1"
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
@@ -173,7 +173,12 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 }
 // Include the output of "generateModMetadata" as an input directory for the build
 // this works with both building through Gradle and the IDE.
-sourceSets.main.resources.srcDir generateModMetadata
+sourceSets{
+    main{
+        resources.srcDir generateModMetadata
+        java.exclude("cn/anecansaitin/cameraanim/generator/**")
+    }
+}
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 
