@@ -58,8 +58,19 @@ public class ServerPayloadManager {
         return tag;
     }
 
-    public CompoundTag getGlobalPath(String id, IPayloadContext context) {
+    public CompoundTag getGlobalPath(String id, int receiver, IPayloadContext context) {
         ServerLevel level = (ServerLevel) context.player().level();
-        return GlobalCameraPath.toNBT(GlobalCameraSavedData.getData(level).getPath(id));
+        GlobalCameraPath path = GlobalCameraSavedData.getData(level).getPath(id);
+        CompoundTag root = new CompoundTag();
+        root.putInt("receiver", receiver);
+
+        if (path == null) {
+            root.putBoolean("succeed", false);
+        } else {
+            root.put("path", GlobalCameraPath.toNBT(path));
+            root.putBoolean("succeed", true);
+        }
+
+        return root;
     }
 }

@@ -1,6 +1,6 @@
 package cn.anecansaitin.cameraanim.client.gui.screen;
 
-import cn.anecansaitin.cameraanim.client.PathCache;
+import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
 import cn.anecansaitin.cameraanim.client.gui.widget.NumberEditBox;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
@@ -37,8 +37,8 @@ public class PointSettingScreen extends Screen {
 
     @Override
     protected void init() {
-        PathCache.SelectedPoint selectedPoint = PathCache.getSelectedPoint();
-        GlobalCameraPath track = PathCache.getTrack();
+        CameraAnimIdeCache.SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
+        GlobalCameraPath track = CameraAnimIdeCache.getPath();
         int time = selectedPoint.getPointTime();
         Vector3f pos = selectedPoint.getPosition();
         if (pos == null) return;
@@ -54,9 +54,9 @@ public class PointSettingScreen extends Screen {
         addRenderableWidget(xyz[0]);
         addRenderableWidget(xyz[1]);
         addRenderableWidget(xyz[2]);
-        addRenderableWidget(new ExtendedButton(x + 202 , y + 2, 50, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(1))));
 
-        if (selectedPoint.getControl() == PathCache.ControlType.NONE) {
+        if (selectedPoint.getControl() == CameraAnimIdeCache.ControlType.NONE) {
+            addRenderableWidget(new ExtendedButton(x + 202 , y + 2, 90, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(1))));
             CameraKeyframe point = track.getPoint(time);
             assert point != null;// pos不为null，则point不为null
             float fov = point.getFov();
@@ -68,11 +68,11 @@ public class PointSettingScreen extends Screen {
             addRenderableWidget(numbers[1]);
             numbers[2] = new NumberEditBox(font, x + 147, y + 2 + 10, 50, 10, rot.z, Component.literal("zRot"));
             addRenderableWidget(numbers[2]);
-            addRenderableWidget(new ExtendedButton(x + 202 , y + 2 + 10, 50, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(2))));
+            addRenderableWidget(new ExtendedButton(x + 202 , y + 2 + 10, 90, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(2))));
             addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10, 30, 10, ZOOM, font));
             numbers[3] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10, 50, 10, fov, Component.literal("zoom"));
             addRenderableWidget(numbers[3]);
-            addRenderableWidget(new ExtendedButton(x + 92 , y + 2 + 10 + 10, 50, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(3))));
+            addRenderableWidget(new ExtendedButton(x + 92 , y + 2 + 10 + 10, 90, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(3))));
             type = CycleButton
                     .builder(PathInterpolator::getDisplayName)
                     .withValues(PathInterpolator.values())
@@ -155,9 +155,9 @@ public class PointSettingScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         int x = 20;
         int y = 20;
-        guiGraphics.hLine(x, x + 260, y, 0xFF95e1d3);
-        guiGraphics.hLine(x, x + 260, y + 54, 0xFF95e1d3);
-        guiGraphics.vLine(x + 260, y, y + 54, 0xFF95e1d3);
+        guiGraphics.hLine(x, x + 300, y, 0xFF95e1d3);
+        guiGraphics.hLine(x, x + 300, y + 54, 0xFF95e1d3);
+        guiGraphics.vLine(x + 300, y, y + 54, 0xFF95e1d3);
         guiGraphics.vLine(x, y, y + 54, 0xFF95e1d3);
     }
 }

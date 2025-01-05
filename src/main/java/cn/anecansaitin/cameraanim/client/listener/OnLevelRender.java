@@ -3,8 +3,9 @@ package cn.anecansaitin.cameraanim.client.listener;
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.InterpolationMath;
 import cn.anecansaitin.cameraanim.client.Animator;
+import cn.anecansaitin.cameraanim.client.PreviewAnimator;
 import cn.anecansaitin.cameraanim.client.ClientUtil;
-import cn.anecansaitin.cameraanim.client.PathCache;
+import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
@@ -28,7 +29,7 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 
-import static cn.anecansaitin.cameraanim.client.PathCache.*;
+import static cn.anecansaitin.cameraanim.client.CameraAnimIdeCache.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class OnLevelRender {
@@ -54,19 +55,32 @@ public class OnLevelRender {
 
     @SubscribeEvent
     public static void onRender(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || !(PathCache.VIEW || PathCache.EDIT)) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             return;
         }
 
-        if (!ClientUtil.gamePaused()) {
-            setupCamera();
-        }
+        setupPlayerCamera();
+        renderCameraAnimIde(event);
+    }
 
-        if (getTrack().getPoints().isEmpty() || ClientUtil.hideGui()) {
+    private static void renderCameraAnimIde(RenderLevelStageEvent event) {
+        if (Animator.INSTANCE.isPlaying()) {
             return;
         }
 
-        PathCache.tick();
+        if ((CameraAnimIdeCache.VIEW || CameraAnimIdeCache.EDIT) && !getPath().getPoints().isEmpty()) {
+            if (!ClientUtil.gamePaused()) {
+                setupCameraAnimIdeCamera();
+            }
+
+            if (!ClientUtil.hideGui()) {
+                renderCameraAnimIdePath(event);
+            }
+        }
+    }
+
+    private static void renderCameraAnimIdePath(RenderLevelStageEvent event) {
+        CameraAnimIdeCache.tick();
         PoseStack poseStack = event.getPoseStack();
         PoseStack.Pose last = poseStack.last();
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -75,7 +89,7 @@ public class OnLevelRender {
         // 获取相机位置
         Vec3 p = event.getCamera().getPosition();
         CAMERA_CACHE.set(p.x, p.y, p.z);
-        PathCache.SelectedPoint selected = getSelectedPoint();
+        SelectedPoint selected = getSelectedPoint();
 
         // 线条
         renderLines(selected, bufferSource, last);
@@ -86,33 +100,62 @@ public class OnLevelRender {
         RenderSystem.disableDepthTest();
     }
 
-    private static final ICameraModifier modifier = CameraModifierManager
-            .createModifier(CameraAnim.MODID, true)
+    private static final ICameraModifier IDE_MODIFIER = CameraModifierManager
+            .createModifier(CameraAnim.MODID + "_ide", false)
             .enableFov()
             .enablePos()
             .enableRotation()
             .enableGlobalMode();
 
-    private static final Vector3f POS = new Vector3f();
-    private static final Vector3f ROT = new Vector3f();
-    private static final float[] FOV = new float[1];
+    private static final Vector3f IDE_POS = new Vector3f();
+    private static final Vector3f IDE_ROT = new Vector3f();
+    private static final float[] IDE_FOV = new float[1];
 
-    private static void setupCamera() {
+    private static void setupCameraAnimIdeCamera() {
+        PreviewAnimator animator = PreviewAnimator.INSTANCE;
+
+        if (!PREVIEW) {
+            IDE_MODIFIER.disable();
+            return;
+        }
+
+        if (!animator.prepareCameraInfo(IDE_POS, IDE_ROT, IDE_FOV)) {
+            return;
+        }
+
+        IDE_MODIFIER.enable()
+                .setPos(IDE_POS.x, IDE_POS.y, IDE_POS.z)
+                .setRotationYXZ(IDE_ROT)
+                .setFov(IDE_FOV[0]);
+    }
+
+    private static final ICameraModifier PLAYER_MODIFIER = CameraModifierManager
+            .createModifier(CameraAnim.MODID + "_player", true)
+            .enableFov()
+            .enablePos()
+            .enableRotation()
+            .enableGlobalMode();
+
+    private static final Vector3f PLAYER_POS = new Vector3f();
+    private static final Vector3f PLAYER_ROT = new Vector3f();
+    private static final float[] PLAYER_FOV = new float[1];
+
+    private static void setupPlayerCamera() {
         Animator animator = Animator.INSTANCE;
 
-        if (!animator.isPreview()) {
-            modifier.disable();
+        if (!animator.isPlaying()) {
+            PLAYER_MODIFIER.disable();
             return;
         }
 
-        if (!animator.prepareCameraInfo(POS, ROT, FOV)) {
+        if (!animator.prepareCameraInfo(PLAYER_POS, PLAYER_ROT, PLAYER_FOV)) {
             return;
         }
 
-        modifier.enable()
-                .setPos(POS.x, POS.y, POS.z)
-                .setRotationYXZ(ROT)
-                .setFov(FOV[0]);
+        PLAYER_MODIFIER.enable()
+                .setPos(PLAYER_POS.x, PLAYER_POS.y, PLAYER_POS.z)
+                .setRotationYXZ(PLAYER_ROT)
+                .setFov(PLAYER_FOV[0]);
     }
 
     private static void renderLines(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose pose) {
@@ -133,45 +176,45 @@ public class OnLevelRender {
     }
 
     private static void renderCamera(PoseStack.Pose pose, VertexConsumer buffer) {
-        Animator animator = Animator.INSTANCE;
-        Q_CACHE.set(0,0,0,1).rotationYXZ(ROT.y, ROT.x, ROT.z);
+        PreviewAnimator animator = PreviewAnimator.INSTANCE;
+        Q_CACHE.set(0, 0, 0, 1).rotationYXZ(IDE_ROT.y, IDE_ROT.x, IDE_ROT.z);
 
-        if (!animator.isPreview()) {
-            if (animator.prepareCameraInfo(POS, ROT, FOV)) {
-                ROT.y *= -1;
-                ROT.mul(Mth.DEG_TO_RAD);
+        if (!PREVIEW) {
+            if (animator.prepareCameraInfo(IDE_POS, IDE_ROT, IDE_FOV)) {
+                IDE_ROT.y *= -1;
+                IDE_ROT.mul(Mth.DEG_TO_RAD);
 
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
 
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
 
-                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, -0.1f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
 
-                addLine(buffer, pose, V_CACHE_1.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
 
-                addLine(buffer, pose, V_CACHE_1.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
-                addLine(buffer, pose, V_CACHE_1.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.5f, 0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, 0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
+                addLine(buffer, pose, V_CACHE_1.set(-0.5f, -0.28125f, 0.3f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), V_CACHE_2.set(-0.15f, -0.1f, 0f).rotate(Q_CACHE).add(IDE_POS).sub(CAMERA_CACHE), 0xff000000);
             }
         }
     }
 
     // 使用vCache1、vCache2、vCache3、vCache4
     private static void renderTrackLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
-        GlobalCameraPath track = getTrack();
+        GlobalCameraPath track = getPath();
         ArrayList<CameraKeyframe> points = track.getPoints();
 
         if (points.size() < 2) {
@@ -256,7 +299,7 @@ public class OnLevelRender {
     // 使用vCache1、vCache2
     private static void renderBezierLine(SelectedPoint selected, VertexConsumer buffer, PoseStack.Pose last) {
         int selectedTime = selected.getPointTime();
-        GlobalCameraPath track = getTrack();
+        GlobalCameraPath track = getPath();
 
         if (selectedTime <= 0) {
             return;
@@ -301,7 +344,7 @@ public class OnLevelRender {
 
     // 使用vCache1
     private static void renderPoint(VertexConsumer buffer, PoseStack.Pose last) {
-        GlobalCameraPath track = getTrack();
+        GlobalCameraPath track = getPath();
 
         for (CameraKeyframe point : track.getPoints()) {
             addPoint(buffer, last, V_CACHE_1.set(point.getPos()).sub(CAMERA_CACHE), 0.1f, 0xff000000);
@@ -314,7 +357,7 @@ public class OnLevelRender {
 
         if (selectedTime < 1) return;
 
-        GlobalCameraPath track = getTrack();
+        GlobalCameraPath track = getPath();
         CameraKeyframe selectedPoint = track.getPoint(selectedTime);
 
         if (selectedPoint == null || selectedPoint.getPathInterpolator() != PathInterpolator.BEZIER) return;

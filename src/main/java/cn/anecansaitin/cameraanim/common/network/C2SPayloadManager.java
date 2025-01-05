@@ -22,7 +22,7 @@ public record C2SPayloadManager(CompoundTag tag) implements CustomPacketPayload 
         HANDLERS.put("checkGlobalPath", (tag, context) -> ServerPayloadManager.INSTANCE.checkGlobalPath(tag.getInt("page"), tag.getInt("size"), context));
         HANDLERS.put("putGlobalPath", (tag, context) -> ServerPayloadManager.INSTANCE.putGlobalPath(GlobalCameraPath.fromNBT(tag), context));
         HANDLERS.put("removeGlobalPath", (tag, context) -> ServerPayloadManager.INSTANCE.removeGlobalPath(tag.getString("id"), context));
-        HANDLERS.put("getGlobalPath", (tag, context) -> ServerPayloadManager.INSTANCE.getGlobalPath(tag.getString("id"), context));
+        HANDLERS.put("getGlobalPath", (tag, context) -> ServerPayloadManager.INSTANCE.getGlobalPath(tag.getString("id"), tag.getInt("receiver"), context));
     }
 
     @Override

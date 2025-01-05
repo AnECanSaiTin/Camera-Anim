@@ -6,14 +6,13 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
 
-import java.util.Objects;
-
 import static cn.anecansaitin.cameraanim.client.ClientUtil.*;
 
-public class PathCache {
+public class CameraAnimIdeCache {
     public static final float POINT_PICK_EXPAND = 0.2f;
     public static boolean EDIT;
     public static boolean VIEW;
+    public static boolean PREVIEW;
     private static Mode MODE = Mode.MOVE;
     private static final MoveModeData MOVE_DATA = new MoveModeData();
     private static GlobalCameraPath TRACK = GlobalCameraPath.NULL;
@@ -56,7 +55,7 @@ public class PathCache {
 
     // 每一帧的更新
     public static void tick() {
-        if (Objects.requireNonNull(MODE) == Mode.MOVE) {
+        if (MODE == Mode.MOVE) {
             MOVE_DATA.move();
         }
     }
@@ -155,7 +154,7 @@ public class PathCache {
         }
     }
 
-    public static GlobalCameraPath getTrack() {
+    public static GlobalCameraPath getPath() {
         return TRACK;
     }
 

@@ -16,9 +16,10 @@ public class ClientPayloadSender {
         send("removeGlobalPath", tag);
     }
 
-    public static void getGlobalPath(String id) {
+    public static void getGlobalPath(String id, int receiver) {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", id);
+        tag.putInt("receiver", receiver);
         send("getGlobalPath", tag);
     }
 

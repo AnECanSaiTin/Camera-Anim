@@ -1,7 +1,7 @@
 package cn.anecansaitin.cameraanim.client.gui.screen;
 
 import cn.anecansaitin.cameraanim.InterpolationMath;
-import cn.anecansaitin.cameraanim.client.PathCache;
+import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.TimeBezierController;
 import cn.anecansaitin.cameraanim.common.animation.TimeInterpolator;
@@ -52,8 +52,8 @@ public class InterpolationSettingScreen extends Screen {
 
     @Override
     protected void init() {
-        PathCache.SelectedPoint selectedPoint = PathCache.getSelectedPoint();
-        CameraKeyframe point = PathCache.getTrack().getPoint(selectedPoint.getPointTime());
+        CameraAnimIdeCache.SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
+        CameraKeyframe point = CameraAnimIdeCache.getPath().getPoint(selectedPoint.getPointTime());
 
         if (point == null) {
             onClose();
@@ -67,7 +67,7 @@ public class InterpolationSettingScreen extends Screen {
                 .builder(TimeInterpolator::getDisplayName)
                 .withValues(TimeInterpolator.values())
                 .withInitialValue(TimeInterpolator.LINEAR)
-                .create(x + 160, y + 60, 70, 20, TYPE, (b, t) -> {
+                .create(x + 200, y + 60, 70, 20, TYPE, (b, t) -> {
                 });
         addRenderableWidget(typeSwitch);
         TimeBezierController bezier = switch (valueType) {
@@ -98,25 +98,25 @@ public class InterpolationSettingScreen extends Screen {
         Bezier bezier2 = new Bezier(right, zero.x, zero.y);
         addRenderableWidget(bezier1);
         addRenderableWidget(bezier2);
-        addRenderableWidget(new ExtendedButton(x + 100, y + 60, 50, 20, EASY_IN, b -> {
+        addRenderableWidget(new ExtendedButton(x + 100, y + 60, 80, 20, EASY_IN, b -> {
             left.set(0.42f, 0);
             right.set(1, 1);
             bezier1.update();
             bezier2.update();
         }));
-        addRenderableWidget(new ExtendedButton(x + 100, y + 80, 50, 20, EASY_OUT, b -> {
+        addRenderableWidget(new ExtendedButton(x + 100, y + 80, 80, 20, EASY_OUT, b -> {
             left.set(0, 0);
             right.set(0.58f, 1);
             bezier1.update();
             bezier2.update();
         }));
-        addRenderableWidget(new ExtendedButton(x + 100, y + 100, 50, 20, EASY_IN_OUT, b -> {
+        addRenderableWidget(new ExtendedButton(x + 100, y + 100, 80, 20, EASY_IN_OUT, b -> {
             left.set(0.42f, 0);
             right.set(0.58f, 1);
             bezier1.update();
             bezier2.update();
         }));
-        addRenderableWidget(new ExtendedButton(x + 100, y + 120, 50, 20, EASY, b -> {
+        addRenderableWidget(new ExtendedButton(x + 100, y + 120, 80, 20, EASY, b -> {
             left.set(0.25f, 0.1f);
             right.set(0.25f, 1);
             bezier1.update();

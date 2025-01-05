@@ -50,7 +50,16 @@ public record S2CPayloadReply(CompoundTag tag) implements CustomPacketPayload {
             return null;
         });
         HANDLERS.put("getGlobalPath", (tag, context) -> {
-            ClientPayloadManager.INSTANCE.getGlobalPath(GlobalCameraPath.fromNBT(tag), context);
+            boolean succeed = tag.getBoolean("succeed");
+            GlobalCameraPath path;
+
+            if (succeed) {
+                path = GlobalCameraPath.fromNBT(tag.getCompound("path"));
+            } else {
+                path = null;
+            }
+
+            ClientPayloadManager.INSTANCE.getGlobalPath(path, succeed, tag.getInt("receiver"), context);
             return null;
         });
     }

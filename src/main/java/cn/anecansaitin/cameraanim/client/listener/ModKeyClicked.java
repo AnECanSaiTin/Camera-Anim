@@ -1,10 +1,10 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.Animator;
+import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.PreviewAnimator;
 import cn.anecansaitin.cameraanim.client.ClientUtil;
 import cn.anecansaitin.cameraanim.client.ModKeyMapping;
-import cn.anecansaitin.cameraanim.client.PathCache;
 import cn.anecansaitin.cameraanim.client.gui.screen.RemotePathSearchScreen;
 import cn.anecansaitin.cameraanim.client.gui.screen.PointSettingScreen;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
@@ -26,7 +26,7 @@ public class ModKeyClicked {
     @SubscribeEvent
     public static void keyClick(ClientTickEvent.Post event) {
         while (ModKeyMapping.ADD_GLOBAL_CAMERA_POINT.get().consumeClick()) {
-            if (!PathCache.EDIT) {
+            if (!CameraAnimIdeCache.EDIT) {
                 continue;
             }
 
@@ -34,17 +34,17 @@ public class ModKeyClicked {
             Camera camera = mc.gameRenderer.getMainCamera();
             float yRot = Mth.wrapDegrees(camera.getYRot());
             float xRot = Mth.wrapDegrees(camera.getXRot());
-            PathCache.getTrack().add(new CameraKeyframe(camera.getPosition().toVector3f(), new Vector3f(xRot, yRot, 0), mc.options.fov().get(), PathInterpolator.LINEAR));
+            CameraAnimIdeCache.getPath().add(new CameraKeyframe(camera.getPosition().toVector3f(), new Vector3f(xRot, yRot, 0), mc.options.fov().get(), PathInterpolator.LINEAR));
         }
 
         while (ModKeyMapping.DELETE_GLOBAL_CAMERA_POINT.get().consumeClick()) {
-            if (!PathCache.EDIT) {
+            if (!CameraAnimIdeCache.EDIT) {
                 continue;
             }
 
-            PathCache.SelectedPoint selectedPoint = PathCache.getSelectedPoint();
+            CameraAnimIdeCache.SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
             int time = selectedPoint.getPointTime();
-            GlobalCameraPath track = PathCache.getTrack();
+            GlobalCameraPath track = CameraAnimIdeCache.getPath();
             track.remove(time);
             Map.Entry<Integer, CameraKeyframe> pre = track.getPreEntry(time);
 
@@ -57,18 +57,18 @@ public class ModKeyClicked {
 
         while (ModKeyMapping.EDIT_MODE.get().consumeClick()) {
             if (ClientUtil.player().isCreative()) {
-                PathCache.EDIT = !PathCache.EDIT;
+                CameraAnimIdeCache.EDIT = !CameraAnimIdeCache.EDIT;
             }
         }
 
         while (ModKeyMapping.VIEW_MODE.get().consumeClick()) {
             if (ClientUtil.player().isCreative()) {
-                PathCache.VIEW = !PathCache.VIEW;
+                CameraAnimIdeCache.VIEW = !CameraAnimIdeCache.VIEW;
             }
         }
 
         while (ModKeyMapping.POINT_SETTING.get().consumeClick()) {
-            if (!PathCache.EDIT || PathCache.getSelectedPoint().getPointTime() < 0) {
+            if (!CameraAnimIdeCache.EDIT || CameraAnimIdeCache.getSelectedPoint().getPointTime() < 0) {
                 continue;
             }
 
@@ -76,50 +76,54 @@ public class ModKeyClicked {
         }
 
         while (ModKeyMapping.PREVIEW_MODE.get().consumeClick()) {
-            if (!PathCache.EDIT) {
+            if (!CameraAnimIdeCache.EDIT) {
                 continue;
             }
 
-            Animator.INSTANCE.setPreview(!Animator.INSTANCE.isPreview());
+            CameraAnimIdeCache.PREVIEW = !CameraAnimIdeCache.PREVIEW;
         }
 
         while (ModKeyMapping.PLAY.get().consumeClick()) {
-            if (!PathCache.EDIT) {
+            if (!CameraAnimIdeCache.EDIT) {
                 continue;
             }
 
-            if (Animator.INSTANCE.isPlaying()) {
-                Animator.INSTANCE.stop();
+            if (PreviewAnimator.INSTANCE.isPlaying()) {
+                PreviewAnimator.INSTANCE.stop();
             } else {
-                Animator.INSTANCE.play();
+                PreviewAnimator.INSTANCE.play();
             }
         }
 
         while (ModKeyMapping.RESET.get().consumeClick()) {
-            if (!PathCache.EDIT) {
+            if (!CameraAnimIdeCache.EDIT) {
                 continue;
             }
 
-            Animator.INSTANCE.reset();
+            PreviewAnimator.INSTANCE.reset();
         }
 
         while (ModKeyMapping.SET_CAMERA_TIME.get().consumeClick()) {
-            if (!PathCache.EDIT || PathCache.getSelectedPoint().getPointTime() < 0) {
+            if (!CameraAnimIdeCache.EDIT || CameraAnimIdeCache.getSelectedPoint().getPointTime() < 0) {
                 continue;
             }
 
-            Animator.INSTANCE.setTime(PathCache.getSelectedPoint().getPointTime());
+            PreviewAnimator.INSTANCE.setTime(CameraAnimIdeCache.getSelectedPoint().getPointTime());
         }
 
-        if (ModKeyMapping.BACK.get().isDown() && PathCache.EDIT) {
-            Animator.INSTANCE.back();
+        if (ModKeyMapping.BACK.get().isDown() && CameraAnimIdeCache.EDIT) {
+            PreviewAnimator.INSTANCE.back();
         }
 
-        if (ModKeyMapping.FORWARD.get().isDown() && PathCache.EDIT) {
-            Animator.INSTANCE.forward();
+        if (ModKeyMapping.FORWARD.get().isDown() && CameraAnimIdeCache.EDIT) {
+            PreviewAnimator.INSTANCE.forward();
         }
 
         while (ModKeyMapping.MANAGER.get().consumeClick()) {
+            if (!ClientUtil.player().isCreative()) {
+                return;
+            }
+
             Minecraft.getInstance().setScreen(new RemotePathSearchScreen());
         }
     }
