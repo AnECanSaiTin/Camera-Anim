@@ -1,6 +1,9 @@
 package cn.anecansaitin.cameraanim.client;
 
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import org.joml.Vector3f;
@@ -8,6 +11,7 @@ import org.joml.Vector3f;
 public final class ClientUtil {
     private static final Vector3f EYE_POS = new Vector3f();
     private static final Vector3f VIEW = new Vector3f();
+    private static CameraType cameraType = CameraType.FIRST_PERSON;
 
     public static LocalPlayer player() {
         return Minecraft.getInstance().player;
@@ -45,7 +49,26 @@ public final class ClientUtil {
         return Mth.wrapDegrees(player().getXRot());
     }
 
+    public static boolean hideGui() {
+        return Minecraft.getInstance().options.hideGui;
+    }
+
     public static boolean gamePaused() {
         return Minecraft.getInstance().isPaused();
+    }
+
+    public static void pushGuiLayer(Screen screen) {
+        Minecraft.getInstance().pushGuiLayer(screen);
+    }
+
+    public static void toThirdView() {
+        Options options = Minecraft.getInstance().options;
+        cameraType = options.getCameraType();
+        options.setCameraType(CameraType.THIRD_PERSON_BACK);
+    }
+
+    public static void resetCameraType() {
+        Options options = Minecraft.getInstance().options;
+        options.setCameraType(cameraType);
     }
 }

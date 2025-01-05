@@ -1,7 +1,7 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.TrackCache;
+import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -36,35 +36,35 @@ public class MouseInput {
     }
 
     private static void leftPress(InputEvent.MouseButton.Pre event) {
-        if (!TrackCache.EDIT) {
+        if (!CameraAnimIdeCache.EDIT) {
             return;
         }
         // 编辑模式下，阻断鼠标点击事件
         event.setCanceled(true);
-        TrackCache.leftPick(playerEyePos(), playerView(), (float) player().entityInteractionRange());
+        CameraAnimIdeCache.leftPick(playerEyePos(), playerView(), (float) player().entityInteractionRange());
     }
 
     private static void rightPress(InputEvent.MouseButton.Pre event) {
-        if (!TrackCache.EDIT) {
+        if (!CameraAnimIdeCache.EDIT) {
             return;
         }
 
         event.setCanceled(true);
-        TrackCache.rightPick(playerEyePos(), playerView(), (float) player().entityInteractionRange());
+        CameraAnimIdeCache.rightPick(playerEyePos(), playerView(), (float) player().entityInteractionRange());
     }
 
     private static void release() {
-        if (!TrackCache.EDIT) {
+        if (!CameraAnimIdeCache.EDIT) {
             return;
         }
 
-        switch (TrackCache.getMode()) {
+        switch (CameraAnimIdeCache.getMode()) {
             case NONE -> {
             }
             case MOVE -> {
-                TrackCache.MoveModeData moveData = TrackCache.getMoveMode();
+                CameraAnimIdeCache.MoveModeData moveData = CameraAnimIdeCache.getMoveMode();
 
-                if (moveData.getMoveType() != TrackCache.MoveType.NONE) {
+                if (moveData.getMoveType() != CameraAnimIdeCache.MoveType.NONE) {
                     moveData.reset();
                 }
             }

@@ -1,29 +1,25 @@
 package cn.anecansaitin.cameraanim.client;
 
-import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
-import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
-import cn.anecansaitin.cameraanim.common.animation.TimeInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.*;
 import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
 import java.util.Map;
 
-import static cn.anecansaitin.cameraanim.InterpolationMath.catmullRom;
-import static cn.anecansaitin.cameraanim.InterpolationMath.line;
 import static cn.anecansaitin.cameraanim.client.ClientUtil.partialTicks;
+import static cn.anecansaitin.cameraanim.InterpolationMath.*;
 
-public class Animator {
-    public static final Animator INSTANCE = new Animator();
-    private GlobalCameraPath path;
+public class PreviewAnimator {
+    public static final PreviewAnimator INSTANCE = new PreviewAnimator();
     private boolean playing;
     private int time;
 
     public void tick() {
-        if (!playing || path == null) {
+        if (!playing) {
             return;
         }
 
-        if (time > path.getLength()) {
+        if (time > CameraAnimIdeCache.getPath().getLength()) {
             reset();
         } else {
             time++;
@@ -41,13 +37,6 @@ public class Animator {
     public void reset() {
         time = 0;
         playing = false;
-        path = null;
-        ClientUtil.resetCameraType();
-    }
-
-    public void resetAndPlay() {
-        time = 0;
-        playing = true;
     }
 
     public int getTime() {
@@ -58,27 +47,35 @@ public class Animator {
         this.time = time;
     }
 
+    public void back() {
+        if (time <= 0) {
+            return;
+        }
+
+        time = Math.max(0, time - 5);
+    }
+
+    public void forward() {
+        if (time >= CameraAnimIdeCache.getPath().getLength()) {
+            return;
+        }
+
+        time = Math.min(CameraAnimIdeCache.getPath().getLength(), time + 5);
+    }
+
     public boolean isPlaying() {
         return playing;
     }
 
-    public void setPathAndPlay(GlobalCameraPath path) {
-        this.path = path;
-        resetAndPlay();
-    }
-
     public boolean prepareCameraInfo(Vector3f posDest, Vector3f rotDest, float[] fov) {
-        if (path == null) {
-            return false;
-        }
-
         float partialTicks = isPlaying() ? partialTicks() : 0;
-        CameraKeyframe current = path.getPoint(time);
+        GlobalCameraPath track = CameraAnimIdeCache.getPath();
+        CameraKeyframe current = track.getPoint(time);
 
         if (current == null) {
             // 当前不处于关键帧上
-            Map.Entry<Integer, CameraKeyframe> preEntry = path.getPreEntry(time);
-            Map.Entry<Integer, CameraKeyframe> nextEntry = path.getNextEntry(time);
+            Map.Entry<Integer, CameraKeyframe> preEntry = track.getPreEntry(time);
+            Map.Entry<Integer, CameraKeyframe> nextEntry = track.getNextEntry(time);
             float t;
 
             if (preEntry == null) {
@@ -111,7 +108,7 @@ public class Animator {
                 case LINEAR -> line(t1, pre.getPos(), next.getPos(), posDest);
                 case SMOOTH -> {
                     Vector3f p0, p3;
-                    Map.Entry<Integer, CameraKeyframe> prePre = path.getPreEntry(preEntry.getKey());
+                    Map.Entry<Integer, CameraKeyframe> prePre = track.getPreEntry(preEntry.getKey());
 
                     if (prePre == null) {
                         p0 = pre.getPos();
@@ -119,7 +116,7 @@ public class Animator {
                         p0 = prePre.getValue().getPos();
                     }
 
-                    Map.Entry<Integer, CameraKeyframe> nextNext = path.getNextEntry(nextEntry.getKey());
+                    Map.Entry<Integer, CameraKeyframe> nextNext = track.getNextEntry(nextEntry.getKey());
 
                     if (nextNext == null) {
                         p3 = next.getPos();

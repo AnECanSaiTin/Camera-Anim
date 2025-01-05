@@ -26,6 +26,15 @@ public class ModKeyMapping {
                     "key.categories." + CameraAnim.MODID
             ));
 
+    public static final Lazy<KeyMapping> DELETE_GLOBAL_CAMERA_POINT = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".delete_global_camera_point",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
     public static final Lazy<KeyMapping> EDIT_MODE = register(
             new KeyMapping(
                     "key." + CameraAnim.MODID + ".edit_mode",
@@ -107,18 +116,9 @@ public class ModKeyMapping {
                     "key.categories." + CameraAnim.MODID
             ));
 
-    public static final Lazy<KeyMapping> LOAD = register(
+    public static final Lazy<KeyMapping> MANAGER = register(
             new KeyMapping(
-                    "key." + CameraAnim.MODID + ".load",
-                    KeyConflictContext.IN_GAME,
-                    InputConstants.Type.KEYSYM,
-                    GLFW.GLFW_KEY_UNKNOWN,
-                    "key.categories." + CameraAnim.MODID
-            ));
-
-    public static final Lazy<KeyMapping> SAVE = register(
-            new KeyMapping(
-                    "key." + CameraAnim.MODID + ".save",
+                    "key." + CameraAnim.MODID + ".manager",
                     KeyConflictContext.IN_GAME,
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_UNKNOWN,

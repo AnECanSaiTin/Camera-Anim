@@ -14,11 +14,23 @@ tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+version = minecraft_version + "-" +mod_version
 group = mod_group_id
 
 repositories {
     mavenLocal()
+
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
 }
 
 base {
@@ -113,7 +125,8 @@ configurations {
 }
 
 dependencies {
-    implementation files("libs/freecameraapi-neo-1.21.3-2.1.1.jar")
+//    implementation files("libs/freecameraapi-neo-1.21.3-2.1.1.jar")
+    implementation "maven.modrinth:free-camera-api:neo-1.21.3-2.1.1"
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
