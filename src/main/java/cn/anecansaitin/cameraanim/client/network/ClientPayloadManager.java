@@ -10,7 +10,7 @@ import cn.anecansaitin.cameraanim.common.data_entity.GlobalCameraPathInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.NetworkEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -24,7 +24,7 @@ public class ClientPayloadManager {
     private static final Component GET_GLOBAL_PATH_SUCCESS = Component.translatable("gui.camera_anim.client_payload_manager.get_global_path_success");
     private static final Component GET_GLOBAL_PATH_FAILURE = Component.translatable("gui.camera_anim.client_payload_manager.get_global_path_failure");
 
-    public void checkGlobalPath(int page, int size, boolean succeed, @Nullable List<GlobalCameraPathInfo> paths, IPayloadContext context) {
+    public void checkGlobalPath(int page, int size, boolean succeed, @Nullable List<GlobalCameraPathInfo> paths, NetworkEvent.Context context) {
         if (succeed && paths != null) {
             Screen screen = Minecraft.getInstance().screen;
 
@@ -36,7 +36,7 @@ public class ClientPayloadManager {
         }
     }
 
-    public void putGlobalPath(boolean succeed, IPayloadContext context) {
+    public void putGlobalPath(boolean succeed, NetworkEvent.Context context) {
         if (succeed) {
             ClientUtil.pushGuiLayer(new InfoScreen(PUT_GLOBAL_PATH_SUCCESS));
         } else {
@@ -44,7 +44,7 @@ public class ClientPayloadManager {
         }
     }
 
-    public void removeGlobalPath(boolean succeed, IPayloadContext context) {
+    public void removeGlobalPath(boolean succeed, NetworkEvent.Context context) {
         if (succeed) {
             ClientUtil.pushGuiLayer(new InfoScreen(DELETE_GLOBAL_PATH_SUCCESS));
         } else {
@@ -52,11 +52,11 @@ public class ClientPayloadManager {
         }
     }
 
-    public void getGlobalPath(@Nullable GlobalCameraPath path, boolean succeed, int receiver, IPayloadContext context) {
+    public void getGlobalPath(@Nullable GlobalCameraPath path, boolean succeed, int receiver, NetworkEvent.Context context) {
         switch (receiver) {
             case 0 -> {
                 if (succeed && path != null) {
-                    CameraAnimIdeCache.setTrack(path);
+                    CameraAnimIdeCache.setPath(path);
                     ClientUtil.pushGuiLayer(new InfoScreen(GET_GLOBAL_PATH_SUCCESS));
                 } else {
                     ClientUtil.pushGuiLayer(new InfoScreen(GET_GLOBAL_PATH_FAILURE));

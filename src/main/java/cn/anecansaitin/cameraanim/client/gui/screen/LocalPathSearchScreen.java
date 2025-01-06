@@ -14,8 +14,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.client.gui.widget.ExtendedButton;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
+import net.minecraftforge.fml.loading.FMLPaths;
 import oshi.util.tuples.Triplet;
 
 import java.io.File;
@@ -78,20 +78,21 @@ public class LocalPathSearchScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawString(font, PAGE, 25, 10, 0xffffffff);
         guiGraphics.drawString(font, LOAD_ID, 215, 10, 0xffffffff);
         guiGraphics.drawString(font, SAVE_ID, 325, 10, 0xffffffff);
-        guiGraphics.drawScrollingString(font, PATH_ID, 20, 50, 49, 0xffffffff);
-        guiGraphics.drawScrollingString(font, MODIFIER, 60, 90, 49, 0xffffffff);
-        guiGraphics.drawScrollingString(font, TIME, 100, 210, 49, 0xffffffff);
+        guiGraphics.drawString(font, PATH_ID, 20, 49, 0xffffffff);
+        guiGraphics.drawString(font, MODIFIER, 60, 49, 0xffffffff);
+        guiGraphics.drawString(font, TIME, 100, 49, 0xffffffff);
 
         if (!list.isEmpty()) {
             for (int i = 0, listSize = list.size(); i < listSize; i++) {
                 Triplet<Component, Component, Component> info = list.get(i);
-                guiGraphics.drawScrollingString(font, info.getA(), 20, 50, 60 + i * 11, 0xffffffff);
-                guiGraphics.drawScrollingString(font, info.getB(), 60, 90, 60 + i * 11, 0xffffffff);
-                guiGraphics.drawScrollingString(font, info.getC(), 100, 210, 60 + i * 11, 0xffffffff);
+                guiGraphics.drawString(font, info.getA(), 20, 60 + i * 11, 0xffffffff);
+                guiGraphics.drawString(font, info.getB(), 60, 60 + i * 11, 0xffffffff);
+                guiGraphics.drawString(font, info.getC(), 100, 60 + i * 11, 0xffffffff);
             }
         } else {
             guiGraphics.drawCenteredString(font, TIP, 180, 200, 0xffffffff);
@@ -143,7 +144,7 @@ public class LocalPathSearchScreen extends Screen {
                 if (jsonObject.has("version") && jsonObject.get("version").getAsString().equals(SERIALIZER_VERSION)) {
                     TypeToken<TreeMap<Integer, CameraKeyframe>> type = new TypeToken<>(){};
                     TreeMap<Integer, CameraKeyframe> map = GSON.fromJson(jsonObject.get("anim"), type.getType());
-                    CameraAnimIdeCache.setTrack(new GlobalCameraPath(map, id));
+                    CameraAnimIdeCache.setPath(new GlobalCameraPath(map, id));
                     ClientUtil.pushGuiLayer(new InfoScreen(FILE_LOAD_SUCCESS));
                 } else {
                     ClientUtil.pushGuiLayer(new InfoScreen(VERSION_ERROR));

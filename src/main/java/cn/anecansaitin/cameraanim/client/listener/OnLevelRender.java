@@ -20,10 +20,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -31,7 +33,7 @@ import java.util.ArrayList;
 
 import static cn.anecansaitin.cameraanim.client.CameraAnimIdeCache.*;
 
-@EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class OnLevelRender {
     private static final int
             X_COLOR = 0xffff1242,
@@ -326,7 +328,7 @@ public class OnLevelRender {
     }
 
     private static void renderFilledBox(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last) {
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_FILLED_BOX);
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.debugFilledBox());
         // 相机点
         renderPoint(buffer, last);
         // 贝塞尔控制点
@@ -339,7 +341,7 @@ public class OnLevelRender {
                     renderArrowhead(selected, buffer, last);
         }
 
-        bufferSource.endBatch(RenderType.DEBUG_FILLED_BOX);
+        bufferSource.endBatch(RenderType.debugFilledBox());
     }
 
     // 使用vCache1
@@ -408,7 +410,7 @@ public class OnLevelRender {
     }
 
     private static void renderQuads(SelectedPoint selected, MultiBufferSource.BufferSource bufferSource, PoseStack.Pose last) {
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.DEBUG_QUADS);
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.debugQuads());
 
         switch (getMode()) {
             case NONE -> {
@@ -417,7 +419,7 @@ public class OnLevelRender {
                     renderMoveSlice(selected, buffer, last);
         }
 
-        bufferSource.endBatch(RenderType.DEBUG_QUADS);
+        bufferSource.endBatch(RenderType.debugQuads());
     }
 
     // 使用vCache1
@@ -444,8 +446,10 @@ public class OnLevelRender {
     // 使用vCache5
     private static void addLine(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos1, Vector3f pos2, int color) {
         Vector3f normalize = V_CACHE_5.set(pos2).sub(pos1).normalize();
-        buffer.addVertex(pose, pos1).setColor(color).setNormal(pose, normalize);
-        buffer.addVertex(pose, pos2).setColor(color).setNormal(pose, normalize);
+        Matrix3f matrix3f = pose.normal();
+        Matrix4f matrix4f = pose.pose();
+        buffer.vertex(matrix4f, pos1.x, pos1.y, pos1.z).color(color).normal(matrix3f, normalize.x, normalize.y, normalize.z).endVertex();
+        buffer.vertex(matrix4f, pos2.x, pos2.y, pos2.z).color(color).normal(matrix3f, normalize.x, normalize.y, normalize.z).endVertex();
     }
 
     // 使用vCache6、vCache7
@@ -481,25 +485,44 @@ public class OnLevelRender {
     // 使用vCache5
     private static void addPoint(VertexConsumer buffer, PoseStack.Pose pose, Vector3f pos, float size, int color) {
         Vector3f vec = V_CACHE_5;
+        Matrix4f matrix4f = pose.pose();
 
-        buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//1
-        buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//1
-        buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//2
-        buffer.addVertex(pose, vec.set(pos).add(-size, size, -size)).setColor(color);//3
-        buffer.addVertex(pose, vec.set(pos).add(size, size, -size)).setColor(color);//4
-        buffer.addVertex(pose, vec.set(pos).add(size, size, size)).setColor(color);//5
-        buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//6
-        buffer.addVertex(pose, vec.set(pos).add(size, -size, size)).setColor(color);//7
-        buffer.addVertex(pose, vec.set(pos).add(-size, -size, size)).setColor(color);//8
-        buffer.addVertex(pose, vec.set(pos).add(size, size, size)).setColor(color);//9
-        buffer.addVertex(pose, vec.set(pos).add(-size, size, size)).setColor(color);//10
-        buffer.addVertex(pose, vec.set(pos).add(-size, size, -size)).setColor(color);//11
-        buffer.addVertex(pose, vec.set(pos).add(-size, -size, size)).setColor(color);//12
-        buffer.addVertex(pose, vec.set(pos).add(-size, -size, -size)).setColor(color);//13
-        buffer.addVertex(pose, vec.set(pos).add(size, -size, -size)).setColor(color);//14
-        buffer.addVertex(pose, vec.set(pos).add(-size, size, -size)).setColor(color);//15
-        buffer.addVertex(pose, vec.set(pos).add(-size, size, -size)).setColor(color);//16
-        buffer.addVertex(pose, vec.set(pos).add(-size, size, -size)).setColor(color);//16
+        vec.set(pos).add(size, -size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//1
+        vec.set(pos).add(size, -size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//1
+        vec.set(pos).add(size, -size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//2
+        vec.set(pos).add(-size, size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//3
+        vec.set(pos).add(size, size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//4
+        vec.set(pos).add(size, size, size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//5
+        vec.set(pos).add(size, -size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//6
+        vec.set(pos).add(size, -size, size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//7
+        vec.set(pos).add(-size, -size, size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//8
+        vec.set(pos).add(size, size, size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//9
+        vec.set(pos).add(-size, size, size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//10
+        vec.set(pos).add(-size, size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//11
+        vec.set(pos).add(-size, -size, size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//12
+        vec.set(pos).add(-size, -size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//13
+        vec.set(pos).add(size, -size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//14
+        vec.set(pos).add(-size, size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//15
+        vec.set(pos).add(-size, size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//16
+        vec.set(pos).add(-size, size, -size);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(color).endVertex();//16
     }
 
     // 使用vCache5
@@ -507,23 +530,36 @@ public class OnLevelRender {
         float spacing = 0.2f;
         float half = 0.3f + spacing;
         Vector3f vec = V_CACHE_5;
+        Matrix4f matrix4f = pose.pose();
         // yz
-        buffer.addVertex(pose, vec.set(pos).add(0, spacing, spacing)).setColor(yzColor);
-        buffer.addVertex(pose, vec.set(pos).add(0, spacing, half)).setColor(yzColor);
-        buffer.addVertex(pose, vec.set(pos).add(0, half, half)).setColor(yzColor);
-        buffer.addVertex(pose, vec.set(pos).add(0, half, spacing)).setColor(yzColor);
+        vec.set(pos).add(0, spacing, spacing);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(yzColor).endVertex();
+        vec.set(pos).add(0, spacing, half);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(yzColor).endVertex();
+        vec.set(pos).add(0, half, half);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(yzColor).endVertex();
+        vec.set(pos).add(0, half, spacing);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(yzColor).endVertex();
 
         //xy
-        buffer.addVertex(pose, vec.set(pos).add(half, half, 0)).setColor(xyColor);
-        buffer.addVertex(pose, vec.set(pos).add(half, spacing, 0)).setColor(xyColor);
-        buffer.addVertex(pose, vec.set(pos).add(spacing, spacing, 0)).setColor(xyColor);
-        buffer.addVertex(pose, vec.set(pos).add(spacing, half, 0)).setColor(xyColor);
+        vec.set(pos).add(half, half, 0);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xyColor).endVertex();
+        vec.set(pos).add(half, spacing, 0);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xyColor).endVertex();
+        vec.set(pos).add(spacing, spacing, 0);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xyColor).endVertex();
+        vec.set(pos).add(spacing, half, 0);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xyColor).endVertex();
 
         //xz
-        buffer.addVertex(pose, vec.set(pos).add(spacing, 0, spacing)).setColor(xzColor);
-        buffer.addVertex(pose, vec.set(pos).add(spacing, 0, half)).setColor(xzColor);
-        buffer.addVertex(pose, vec.set(pos).add(half, 0, half)).setColor(xzColor);
-        buffer.addVertex(pose, vec.set(pos).add(half, 0, spacing)).setColor(xzColor);
+        vec.set(pos).add(spacing, 0, spacing);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xzColor).endVertex();
+        vec.set(pos).add(spacing, 0, half);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xzColor).endVertex();
+        vec.set(pos).add(half, 0, half);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xzColor).endVertex();
+        vec.set(pos).add(half, 0, spacing);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z).color(xzColor).endVertex();
     }
 
     // 使用vCache5
@@ -532,52 +568,53 @@ public class OnLevelRender {
         float size = 0.1f;
         float height = 0.35f;
         float spacing = 1;
+        Matrix4f matrix4f = pose.pose();
         // y
         vec.add(0, spacing, 0);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
-        buffer.addVertex(pose, vec.x + size, vec.y, vec.z - size).setColor(yColor);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z + size).setColor(yColor);
-        buffer.addVertex(pose, vec.x + size, vec.y, vec.z + size).setColor(yColor);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
-        buffer.addVertex(pose, vec.x + size, vec.y, vec.z - size).setColor(yColor);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z - size).setColor(yColor);
-        buffer.addVertex(pose, vec.x - size, vec.y, vec.z + size).setColor(yColor);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
-        buffer.addVertex(pose, vec.x, vec.y + height, vec.z).setColor(yColor);
+        buffer.vertex(matrix4f, vec.x - size, vec.y, vec.z - size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y, vec.z - size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y, vec.z - size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + size, vec.y, vec.z - size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y, vec.z + size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + size, vec.y, vec.z + size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + height, vec.z).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + size, vec.y, vec.z - size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y, vec.z - size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y, vec.z + size).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + height, vec.z).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + height, vec.z).color(yColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + height, vec.z).color(yColor).endVertex();
 
         // x
         vec.add(spacing, -spacing, 0);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y + size, vec.z - size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z + size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y + size, vec.z + size).setColor(xColor);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y + size, vec.z - size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z - size).setColor(xColor);
-        buffer.addVertex(pose, vec.x, vec.y - size, vec.z + size).setColor(xColor);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
-        buffer.addVertex(pose, vec.x + height, vec.y, vec.z).setColor(xColor);
+        buffer.vertex(matrix4f, vec.x, vec.y - size, vec.z - size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y - size, vec.z - size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y - size, vec.z - size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + size, vec.z - size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y - size, vec.z + size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + size, vec.z + size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + height, vec.y, vec.z).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y + size, vec.z - size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y - size, vec.z - size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y - size, vec.z + size).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + height, vec.y, vec.z).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + height, vec.y, vec.z).color(xColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + height, vec.y, vec.z).color(xColor).endVertex();
 
         // z
         vec.add(-spacing, 0, spacing);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
-        buffer.addVertex(pose, vec.x - size, vec.y + size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x + size, vec.y - size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x, vec.y, vec.z + height).setColor(zColor);
-        buffer.addVertex(pose, vec.x + size, vec.y + size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x - size, vec.y + size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x + size, vec.y - size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
-        buffer.addVertex(pose, vec.x - size, vec.y - size, vec.z).setColor(zColor);
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z + height).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z + height).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z + height).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y + size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y - size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + size, vec.y - size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x, vec.y, vec.z + height).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + size, vec.y + size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y + size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x + size, vec.y - size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y - size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y - size, vec.z).color(zColor).endVertex();
+        buffer.vertex(matrix4f, vec.x - size, vec.y - size, vec.z).color(zColor).endVertex();
     }
 }

@@ -3,25 +3,26 @@ package cn.anecansaitin.cameraanim.common;
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.common.network.C2SPayloadManager;
 import cn.anecansaitin.cameraanim.common.network.S2CPayloadReply;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.simple.SimpleChannel;
 
-@EventBusSubscriber(modid = CameraAnim.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ModNetwork {
-    @SubscribeEvent
-    public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
-        registrar.optional()
-                .playToServer(
-                        C2SPayloadManager.TYPE,
-                        C2SPayloadManager.CODEC,
-                        C2SPayloadManager::handle
-                ).playToClient(
-                        S2CPayloadReply.TYPE,
-                        S2CPayloadReply.CODEC,
-                        S2CPayloadReply::handle
-                );
+    private static final String PROTOCOL_VERSION = "1";
+    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
+            new ResourceLocation(CameraAnim.MODID, "main"),
+            () -> PROTOCOL_VERSION,
+            PROTOCOL_VERSION::equals,
+            PROTOCOL_VERSION::equals
+    );
+
+    static {
+        int i = 0;
+        INSTANCE.registerMessage(i++, C2SPayloadManager.class, C2SPayloadManager::encode, C2SPayloadManager::decode, C2SPayloadManager::handle);
+        INSTANCE.registerMessage(i++ , S2CPayloadReply.class, S2CPayloadReply::encode, S2CPayloadReply::decode, S2CPayloadReply::handle);
+    }
+
+    public static void init() {
+
     }
 }

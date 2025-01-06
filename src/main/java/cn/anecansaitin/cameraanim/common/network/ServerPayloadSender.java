@@ -1,9 +1,10 @@
 package cn.anecansaitin.cameraanim.common.network;
 
+import cn.anecansaitin.cameraanim.common.ModNetwork;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 public class ServerPayloadSender {
     public static void sendGlobalPath(GlobalCameraPath path, ServerPlayer player, int receiver) {
@@ -24,6 +25,6 @@ public class ServerPayloadSender {
         CompoundTag root = new CompoundTag();
         root.putString("key", key);
         root.put("value", value);
-        PacketDistributor.sendToPlayer(player, new S2CPayloadReply(root));
+        ModNetwork.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new S2CPayloadReply(root));
     }
 }

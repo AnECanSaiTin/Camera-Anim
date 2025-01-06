@@ -14,12 +14,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.BaseCommandBlock;
-import net.minecraft.world.level.block.entity.CommandBlockEntity;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(modid = CameraAnim.MODID)
+import java.util.List;
+
+@Mod.EventBusSubscriber(modid = CameraAnim.MODID)
 public class OnRegisterCommands {
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -40,14 +41,22 @@ public class OnRegisterCommands {
                                         .then(Commands.argument("Anim Id", StringArgumentType.greedyString())
                                                 .executes(context -> {
                                                     EntitySelector target = context.getArgument("Target", EntitySelector.class);
-                                                    ServerPlayer player = target.findSinglePlayer(context.getSource());
+                                                    List<ServerPlayer> players = target.findPlayers(context.getSource());
+
+                                                    if (players.isEmpty()) {
+                                                        return 1;
+                                                    }
+
+                                                    ServerPlayer p = players.get(0);
                                                     String animId = context.getArgument("Anim Id", String.class);
-                                                    GlobalCameraSavedData data = GlobalCameraSavedData.getData((ServerLevel) player.level());
+                                                    GlobalCameraSavedData data = GlobalCameraSavedData.getData((ServerLevel) p.level());
                                                     GlobalCameraPath path = data.getPath(animId);
 
                                                     if (path == null) {
-                                                        player.sendSystemMessage(Component.literal("动画" + animId + "不存在"));
-                                                    } else {
+                                                        return 1;
+                                                    }
+
+                                                    for (ServerPlayer player : players) {
                                                         ServerPayloadSender.sendGlobalPath(path, player, 1);
                                                     }
 

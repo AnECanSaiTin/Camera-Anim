@@ -1,7 +1,6 @@
 package cn.anecansaitin.cameraanim.common;
 
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class GlobalCameraSavedData extends SavedData {
     private final HashMap<String, GlobalCameraPath> paths = new HashMap<>();
@@ -20,7 +18,7 @@ public class GlobalCameraSavedData extends SavedData {
         return new GlobalCameraSavedData();
     }
 
-    private static GlobalCameraSavedData load(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    private static GlobalCameraSavedData load(CompoundTag tag) {
         GlobalCameraSavedData data = new GlobalCameraSavedData();
         ListTag paths = tag.getList("paths", 10);
 
@@ -33,7 +31,7 @@ public class GlobalCameraSavedData extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    public CompoundTag save(CompoundTag tag) {
         ListTag paths = new ListTag();
 
         for (Map.Entry<String, GlobalCameraPath> entry : this.paths.entrySet()) {
@@ -67,6 +65,6 @@ public class GlobalCameraSavedData extends SavedData {
     }
 
     public static GlobalCameraSavedData getData(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(new Factory<>(GlobalCameraSavedData::create, GlobalCameraSavedData::load), "camera_anim");
+        return level.getServer().overworld().getDataStorage().computeIfAbsent(GlobalCameraSavedData::load, GlobalCameraSavedData::create, "camera_anim");
     }
 }

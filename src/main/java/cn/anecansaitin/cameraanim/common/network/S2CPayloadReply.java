@@ -1,26 +1,21 @@
 package cn.anecansaitin.cameraanim.common.network;
 
-import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.client.network.ClientPayloadManager;
+import cn.anecansaitin.cameraanim.common.ModNetwork;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.data_entity.GlobalCameraPathInfo;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
-public record S2CPayloadReply(CompoundTag tag) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<S2CPayloadReply> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(CameraAnim.MODID, "s_2_c_payload_reply"));
-    public static final StreamCodec<ByteBuf, S2CPayloadReply> CODEC = StreamCodec.composite(ByteBufCodecs.COMPOUND_TAG, S2CPayloadReply::tag, S2CPayloadReply::new);
-    private static final HashMap<String, BiFunction<CompoundTag, IPayloadContext, CompoundTag>> HANDLERS = new HashMap<>();
+public record S2CPayloadReply(CompoundTag tag) {
+    private static final HashMap<String, BiFunction<CompoundTag, NetworkEvent.Context, CompoundTag>> HANDLERS = new HashMap<>();
 
     static {
         HANDLERS.put("checkGlobalPath", (tag, context) -> {
@@ -64,29 +59,36 @@ public record S2CPayloadReply(CompoundTag tag) implements CustomPacketPayload {
         });
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static void encode(S2CPayloadReply pag, FriendlyByteBuf buf) {
+        buf.writeNbt(pag.tag);
     }
 
-    public static void handle(S2CPayloadReply payload, IPayloadContext context) {
-        String key = payload.tag.getString("key");
-        BiFunction<CompoundTag, IPayloadContext, CompoundTag> handler = HANDLERS.get(key);
+    public static S2CPayloadReply decode(FriendlyByteBuf bug) {
+        return new S2CPayloadReply(bug.readNbt());
+    }
 
-        if (handler == null) {
-            return;
-        }
+    public static void handle(S2CPayloadReply payload, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            String key = payload.tag.getString("key");
+            BiFunction<CompoundTag, NetworkEvent.Context, CompoundTag> handler = HANDLERS.get(key);
 
-        CompoundTag result = handler.apply(payload.tag.getCompound("value"), context);
+            if (handler == null) {
+                return;
+            }
 
-        if (result == null) {
-            return;
-        }
+            CompoundTag result = handler.apply(payload.tag.getCompound("value"), context);
 
-        CompoundTag root = new CompoundTag();
-        root.putString("key", key);
-        root.put("value", result);
+            if (result == null) {
+                return;
+            }
 
-        context.reply(new C2SPayloadManager(root));
+            CompoundTag root = new CompoundTag();
+            root.putString("key", key);
+            root.put("value", result);
+
+            ModNetwork.INSTANCE.reply(new C2SPayloadManager(root), context);
+        });
+        context.setPacketHandled(true);
     }
 }

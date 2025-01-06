@@ -79,5 +79,6 @@
   "key.camera_anim.reset": "复位",
   "key.camera_anim.set_camera_time": "设置相机时间",
   "key.camera_anim.view_mode": "查看模式",
+  "key.camera_anim.clean": "清空",
   "key.categories.camera_anim": "相机大师"
 }

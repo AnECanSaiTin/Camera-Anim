@@ -13,18 +13,22 @@ import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.joml.Vector3f;
 
 import java.util.Map;
 
-@EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class ModKeyClicked {
     @SubscribeEvent
-    public static void keyClick(ClientTickEvent.Post event) {
+    public static void keyClick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+
         while (ModKeyMapping.ADD_GLOBAL_CAMERA_POINT.get().consumeClick()) {
             if (!CameraAnimIdeCache.EDIT) {
                 continue;
@@ -125,6 +129,14 @@ public class ModKeyClicked {
             }
 
             Minecraft.getInstance().setScreen(new RemotePathSearchScreen());
+        }
+
+        while (ModKeyMapping.CLEAN.get().consumeClick()) {
+            if (!CameraAnimIdeCache.EDIT) {
+                return;
+            }
+
+            CameraAnimIdeCache.setPath(new GlobalCameraPath("id"));
         }
     }
 }

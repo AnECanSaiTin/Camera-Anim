@@ -3,15 +3,15 @@ package cn.anecansaitin.cameraanim.client.listener;
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
 import net.minecraft.client.Minecraft;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.InputEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
 import static cn.anecansaitin.cameraanim.client.ClientUtil.*;
 
-@EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class MouseInput {
     @SubscribeEvent
     public static void onMouseReleased(InputEvent.MouseButton.Pre event) {
@@ -41,7 +41,7 @@ public class MouseInput {
         }
         // 编辑模式下，阻断鼠标点击事件
         event.setCanceled(true);
-        CameraAnimIdeCache.leftPick(playerEyePos(), playerView(), (float) player().entityInteractionRange());
+        CameraAnimIdeCache.leftPick(playerEyePos(), playerView(), 6);
     }
 
     private static void rightPress(InputEvent.MouseButton.Pre event) {
@@ -50,7 +50,7 @@ public class MouseInput {
         }
 
         event.setCanceled(true);
-        CameraAnimIdeCache.rightPick(playerEyePos(), playerView(), (float) player().entityInteractionRange());
+        CameraAnimIdeCache.rightPick(playerEyePos(), playerView(), 6);
     }
 
     private static void release() {

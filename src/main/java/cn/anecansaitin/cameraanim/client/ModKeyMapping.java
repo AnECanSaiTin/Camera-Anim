@@ -3,17 +3,17 @@ package cn.anecansaitin.cameraanim.client;
 import cn.anecansaitin.cameraanim.CameraAnim;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
-import net.neoforged.neoforge.common.util.Lazy;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.common.util.Lazy;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 
-@EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModKeyMapping {
     private static ArrayList<Lazy<KeyMapping>> list = new ArrayList<>();
 
@@ -119,6 +119,15 @@ public class ModKeyMapping {
     public static final Lazy<KeyMapping> MANAGER = register(
             new KeyMapping(
                     "key." + CameraAnim.MODID + ".manager",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> CLEAN = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".clean",
                     KeyConflictContext.IN_GAME,
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_UNKNOWN,

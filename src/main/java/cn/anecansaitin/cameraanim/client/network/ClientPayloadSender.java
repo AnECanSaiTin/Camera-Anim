@@ -1,9 +1,9 @@
 package cn.anecansaitin.cameraanim.client.network;
 
+import cn.anecansaitin.cameraanim.common.ModNetwork;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.network.C2SPayloadManager;
 import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public class ClientPayloadSender {
     public static void putGlobalPath(GlobalCameraPath path) {
@@ -34,6 +34,6 @@ public class ClientPayloadSender {
         CompoundTag root = new CompoundTag();
         root.putString("key", key);
         root.put("value", value);
-        PacketDistributor.sendToServer(new C2SPayloadManager(root));
+        ModNetwork.INSTANCE.sendToServer(new C2SPayloadManager(root));
     }
 }

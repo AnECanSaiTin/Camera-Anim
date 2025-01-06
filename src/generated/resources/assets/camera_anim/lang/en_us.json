@@ -79,5 +79,6 @@
   "key.camera_anim.reset": "Reset",
   "key.camera_anim.set_camera_time": "Set Camera Time",
   "key.camera_anim.view_mode": "View Mode",
+  "key.camera_anim.clean": "Clean",
   "key.categories.camera_anim": "Camera Anim"
 }
