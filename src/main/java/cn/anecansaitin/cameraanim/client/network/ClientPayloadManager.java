@@ -56,7 +56,7 @@ public class ClientPayloadManager {
         switch (receiver) {
             case 0 -> {
                 if (succeed && path != null) {
-                    CameraAnimIdeCache.setTrack(path);
+                    CameraAnimIdeCache.setPath(path);
                     ClientUtil.pushGuiLayer(new InfoScreen(GET_GLOBAL_PATH_SUCCESS));
                 } else {
                     ClientUtil.pushGuiLayer(new InfoScreen(GET_GLOBAL_PATH_FAILURE));

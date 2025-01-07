@@ -126,5 +126,13 @@ public class ModKeyClicked {
 
             Minecraft.getInstance().setScreen(new RemotePathSearchScreen());
         }
+
+        while (ModKeyMapping.CLEAN.get().consumeClick()) {
+            if (!CameraAnimIdeCache.EDIT) {
+                continue;
+            }
+
+            CameraAnimIdeCache.setPath(new GlobalCameraPath("new"));
+        }
     }
 }

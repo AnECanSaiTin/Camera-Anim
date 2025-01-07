@@ -176,7 +176,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets{
     main{
         resources.srcDir generateModMetadata
-        java.exclude("cn/anecansaitin/cameraanim/generator/**")
+//        java.exclude("cn/anecansaitin/cameraanim/generator/**")
     }
 }
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload

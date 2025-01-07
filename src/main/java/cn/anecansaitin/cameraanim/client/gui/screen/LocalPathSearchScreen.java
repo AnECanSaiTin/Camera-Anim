@@ -143,7 +143,7 @@ public class LocalPathSearchScreen extends Screen {
                 if (jsonObject.has("version") && jsonObject.get("version").getAsString().equals(SERIALIZER_VERSION)) {
                     TypeToken<TreeMap<Integer, CameraKeyframe>> type = new TypeToken<>(){};
                     TreeMap<Integer, CameraKeyframe> map = GSON.fromJson(jsonObject.get("anim"), type.getType());
-                    CameraAnimIdeCache.setTrack(new GlobalCameraPath(map, id));
+                    CameraAnimIdeCache.setPath(new GlobalCameraPath(map, id));
                     ClientUtil.pushGuiLayer(new InfoScreen(FILE_LOAD_SUCCESS));
                 } else {
                     ClientUtil.pushGuiLayer(new InfoScreen(VERSION_ERROR));

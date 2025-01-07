@@ -15,7 +15,7 @@ public class CameraAnimIdeCache {
     public static boolean PREVIEW;
     private static Mode MODE = Mode.MOVE;
     private static final MoveModeData MOVE_DATA = new MoveModeData();
-    private static GlobalCameraPath TRACK = new GlobalCameraPath("new");
+    private static GlobalCameraPath PATH = new GlobalCameraPath("new");
     private static final SelectedPoint SELECTED_POINT = new SelectedPoint();
     private static final float BEZIER_PICK_EXPAND = 0.1f;
 
@@ -96,7 +96,7 @@ public class CameraAnimIdeCache {
             return length;
         }
         // 检查是否为贝塞尔曲线控制点
-        CameraKeyframe point = TRACK.getPoint(selectedTime);
+        CameraKeyframe point = PATH.getPoint(selectedTime);
 
         if (point == null || point.getPathInterpolator() != PathInterpolator.BEZIER) {
             return length;
@@ -111,7 +111,7 @@ public class CameraAnimIdeCache {
             SELECTED_POINT.setControl(ControlType.RIGHT);
         }
 
-        CameraKeyframe pre = TRACK.getPrePoint(selectedTime);
+        CameraKeyframe pre = PATH.getPrePoint(selectedTime);
 
         if (pre == null) {
             return length;
@@ -131,7 +131,7 @@ public class CameraAnimIdeCache {
     private static void pickPoint(float length, Vector3f origin, Vector3f direction) {
         int time = -1;
 
-        for (Int2ObjectMap.Entry<CameraKeyframe> entry : TRACK.getEntries()) {
+        for (Int2ObjectMap.Entry<CameraKeyframe> entry : PATH.getEntries()) {
             Vector3f position = entry.getValue().getPos();
             float d = position.distanceSquared(origin);
 
@@ -155,11 +155,11 @@ public class CameraAnimIdeCache {
     }
 
     public static GlobalCameraPath getPath() {
-        return TRACK;
+        return PATH;
     }
 
-    public static void setTrack(GlobalCameraPath track) {
-        TRACK = track;
+    public static void setPath(GlobalCameraPath path) {
+        PATH = path;
         SELECTED_POINT.reset();
     }
 
@@ -202,17 +202,17 @@ public class CameraAnimIdeCache {
 
             switch (control) {
                 case LEFT -> {
-                    CameraKeyframe point = TRACK.getPoint(pointTime);
+                    CameraKeyframe point = PATH.getPoint(pointTime);
                     if (point == null) break;
                     pos = point.getPathBezier().getLeft();
                 }
                 case RIGHT -> {
-                    CameraKeyframe point = TRACK.getPoint(pointTime);
+                    CameraKeyframe point = PATH.getPoint(pointTime);
                     if (point == null) break;
                     pos = point.getPathBezier().getRight();
                 }
                 case NONE -> {
-                    CameraKeyframe point = TRACK.getPoint(pointTime);
+                    CameraKeyframe point = PATH.getPoint(pointTime);
                     if (point == null) break;
                     pos = point.getPos();
                 }
@@ -330,21 +330,21 @@ public class CameraAnimIdeCache {
 
                 switch (SELECTED_POINT.control) {
                     case LEFT -> {
-                        CameraKeyframe point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                        CameraKeyframe point = PATH.getPoint(SELECTED_POINT.pointTime);
                         if (point == null) return false;
                         pos = point.getPathBezier().getLeft();
                         min = new Vector3f(pos).sub(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                         max = new Vector3f(pos).add(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                     }
                     case RIGHT -> {
-                        CameraKeyframe point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                        CameraKeyframe point = PATH.getPoint(SELECTED_POINT.pointTime);
                         if (point == null) return false;
                         pos = point.getPathBezier().getRight();
                         min = new Vector3f(pos).sub(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                         max = new Vector3f(pos).add(BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND, BEZIER_PICK_EXPAND);
                     }
                     case NONE -> {
-                        CameraKeyframe point = TRACK.getPoint(SELECTED_POINT.pointTime);
+                        CameraKeyframe point = PATH.getPoint(SELECTED_POINT.pointTime);
                         if (point == null) return false;
                         pos = point.getPos();
                         min = new Vector3f(pos).sub(POINT_PICK_EXPAND, POINT_PICK_EXPAND, POINT_PICK_EXPAND);
