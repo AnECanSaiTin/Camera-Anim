@@ -3,6 +3,7 @@ package cn.anecansaitin.cameraanim.client;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -70,5 +71,9 @@ public final class ClientUtil {
     public static void resetCameraType() {
         Options options = Minecraft.getInstance().options;
         options.setCameraType(cameraType);
+    }
+
+    public static Font font() {
+        return Minecraft.getInstance().font;
     }
 }

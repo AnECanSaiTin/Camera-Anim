@@ -22,6 +22,7 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(modid = CameraAnim.MODID)
 public class OnRegisterCommands {
+    private static final Component PLAY_ANIM_FAILURE = Component.translatable("commands.cameraanim.play.failure");
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
@@ -47,17 +48,17 @@ public class OnRegisterCommands {
                                                         return 1;
                                                     }
 
-                                                    ServerPlayer p = players.get(0);
+                                                    ServerPlayer player = players.get(0);
                                                     String animId = context.getArgument("Anim Id", String.class);
-                                                    GlobalCameraSavedData data = GlobalCameraSavedData.getData((ServerLevel) p.level());
+                                                    GlobalCameraSavedData data = GlobalCameraSavedData.getData((ServerLevel) player.level());
                                                     GlobalCameraPath path = data.getPath(animId);
 
                                                     if (path == null) {
-                                                        return 1;
+                                                        context.getSource().sendFailure(PLAY_ANIM_FAILURE.copy().append(animId));
                                                     }
 
-                                                    for (ServerPlayer player : players) {
-                                                        ServerPayloadSender.sendGlobalPath(path, player, 1);
+                                                    for (ServerPlayer serverPlayer : players) {
+                                                        ServerPayloadSender.sendGlobalPath(path, serverPlayer, 1);
                                                     }
 
                                                     return 1;

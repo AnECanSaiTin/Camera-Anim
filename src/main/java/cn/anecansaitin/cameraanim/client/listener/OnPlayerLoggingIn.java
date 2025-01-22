@@ -13,7 +13,6 @@ import net.minecraftforge.network.NetworkRegistry;
 public class OnPlayerLoggingIn {
     @SubscribeEvent
     public static void loggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
-        int i = 10;
         RemotePathSearchScreen.REMOTE = ModNetwork.INSTANCE.isRemotePresent(event.getConnection());
     }
 }

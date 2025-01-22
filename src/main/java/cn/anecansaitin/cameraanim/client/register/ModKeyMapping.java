@@ -1,4 +1,4 @@
-package cn.anecansaitin.cameraanim.client;
+package cn.anecansaitin.cameraanim.client.register;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
 import com.mojang.blaze3d.platform.InputConstants;

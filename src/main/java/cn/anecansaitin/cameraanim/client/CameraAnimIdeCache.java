@@ -158,8 +158,8 @@ public class CameraAnimIdeCache {
         return PATH;
     }
 
-    public static void setPath(GlobalCameraPath track) {
-        PATH = track;
+    public static void setPath(GlobalCameraPath path) {
+        PATH = path;
         SELECTED_POINT.reset();
     }
 
