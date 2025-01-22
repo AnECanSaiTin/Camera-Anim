@@ -4,7 +4,7 @@ import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
 import cn.anecansaitin.cameraanim.client.PreviewAnimator;
 import cn.anecansaitin.cameraanim.client.ClientUtil;
-import cn.anecansaitin.cameraanim.client.ModKeyMapping;
+import cn.anecansaitin.cameraanim.client.register.ModKeyMapping;
 import cn.anecansaitin.cameraanim.client.gui.screen.RemotePathSearchScreen;
 import cn.anecansaitin.cameraanim.client.gui.screen.PointSettingScreen;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;

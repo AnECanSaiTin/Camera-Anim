@@ -1,7 +1,7 @@
 package cn.anecansaitin.cameraanim.generator.assest;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.ModKeyMapping;
+import cn.anecansaitin.cameraanim.client.register.ModKeyMapping;
 import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
 import cn.anecansaitin.cameraanim.common.animation.TimeInterpolator;
 import net.minecraft.data.PackOutput;
@@ -100,6 +100,12 @@ public class ModLangProvider extends LanguageProvider {
         add("gui.camera_anim.client_payload_manager.get_global_path_failure", "获取路径失败", "Get Global Path Failure");
         add("gui.camera_anim.client_payload_manager.delete_global_path_success", "删除路径成功", "Delete Global Path Success");
         add("gui.camera_anim.client_payload_manager.delete_global_path_failure", "删除路径失败", "Delete Global Path Failure");
+
+        add("hud.camera_anim.modify_mode.open", "(已开启)", "( Opened )");
+        add("hud.camera_anim.modify_mode.close", "(已关闭)", "( Closed )");
+        add("hud.camera_anim.modify_mode.select", "选择关键帧", "Select Keyframe");
+        add("hud.camera_anim.modify_mode.move", "移动关键帧", "Move Keyframe");
+        add("hud.camera_anim.modify_mode.drag", "拖拽关键帧", "Drag Keyframe");
 
         add("freecamera.modifier." + CameraAnim.MODID + "_player", "相机动画播放器", "Camera Anim Player");
         add("freecamera.modifier." + CameraAnim.MODID + "_ide", "相机动画集成开发播放器", "Camera Anim IDE Player");
