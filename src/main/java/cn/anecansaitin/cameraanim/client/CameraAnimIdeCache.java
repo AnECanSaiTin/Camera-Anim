@@ -386,13 +386,23 @@ public class CameraAnimIdeCache {
             /// 根据交点的坐标与delta相加，得到目标坐标
             switch (moveType) {
                 case X -> {
-                    float t = Intersectionf.intersectRayPlane(
+                    float a = Intersectionf.intersectRayPlane(
                             origin.x, origin.y, origin.z,
                             view.x, view.y, view.z,
                             pos.x, pos.y, pos.z,
                             0, xRot < 0 ? -1 : 1, 0,
                             1e-6f
                     );
+
+                    float b = Intersectionf.intersectRayPlane(
+                            origin.x, origin.y, origin.z,
+                            view.x, view.y, view.z,
+                            pos.x, pos.y, pos.z,
+                            0, 0, Math.abs(yRot) >= 90 ? 1 : -1,
+                            1e-6f
+                    );
+
+                    float t = (a == 0) ? b : (b == 0) ? a : Math.min(a, b);
 
                     if (t < 0) {
                         return;
@@ -418,13 +428,23 @@ public class CameraAnimIdeCache {
                     pos.y = view.y * t + origin.y + delta.y;
                 }
                 case Z -> {
-                    float t = Intersectionf.intersectRayPlane(
+                    float a = Intersectionf.intersectRayPlane(
                             origin.x, origin.y, origin.z,
                             view.x, view.y, view.z,
                             pos.x, pos.y, pos.z,
                             0, xRot < 0 ? -1 : 1, 0,
                             1e-6f
                     );
+
+                    float b = Intersectionf.intersectRayPlane(
+                            origin.x, origin.y, origin.z,
+                            view.x, view.y, view.z,
+                            pos.x, pos.y, pos.z,
+                            yRot >= 0 ? 1 : -1, 0, 0,
+                            1e-6f
+                    );
+
+                    float t = (a == 0) ? b : (b == 0) ? a : Math.min(a, b);
 
                     if (t < 0) {
                         return;
