@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class GlobalCameraSavedData extends SavedData {
     private final HashMap<String, GlobalCameraPath> paths = new HashMap<>();
