@@ -12,6 +12,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.gui.widget.ExtendedButton;
+import org.joml.Vector3f;
 import oshi.util.tuples.Triplet;
 
 import java.time.Instant;
@@ -70,6 +71,10 @@ public class RemotePathSearchScreen extends Screen {
 
                 if (!track.getId().equals(newId.getValue())) {
                     track = track.resetID(newId.getValue());
+                }
+
+                if (track.isNativeMode()) {
+                    track = track.toNative(CameraAnimIdeCache.getNativePos(), CameraAnimIdeCache.getNativeRot().y);
                 }
 
                 ClientPayloadSender.putGlobalPath(track);

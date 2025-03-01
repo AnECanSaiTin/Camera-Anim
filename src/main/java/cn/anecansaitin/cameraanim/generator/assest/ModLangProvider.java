@@ -31,6 +31,8 @@ public class ModLangProvider extends LanguageProvider {
         add(ModKeyMapping.FORWARD.get().getName(), "前进", "Forward");
         add(ModKeyMapping.MANAGER.get().getName(), "控制中心", "Manager");
         add(ModKeyMapping.CLEAN.get().getName(), "清空", "Clean");
+        add(ModKeyMapping.NATIVE_CENTER.get().getName(), "设置局部模式中心", "Set Native Center");
+        add(ModKeyMapping.REMOVE_NATIVE_CENTER.get().getName(), "移除局部模式中心", "Remove Native Center");
 
         add(PathInterpolator.STEP.getDisplayNameKey(), "步", "Step");
         add(PathInterpolator.SMOOTH.getDisplayNameKey(), "平滑", "Smooth");
@@ -111,6 +113,7 @@ public class ModLangProvider extends LanguageProvider {
         add("freecamera.modifier." + CameraAnim.MODID + "_ide", "相机动画集成开发播放器", "Camera Anim IDE Player");
 
         add("commands.cameraanim.play.failure", "播放失败，动画不存在。Id: ", "Play Failure, Animation Not Exist. Id: ");
+        add("commands.cameraanim.play.native.failure", "播放失败，不是局部动画。Id: ", "Play Failure, Animation Not Native Mode. Id: ");
     }
 
     private void add(String key, String cn, String en) {

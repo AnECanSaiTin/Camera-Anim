@@ -19,6 +19,9 @@ public class CameraAnimIdeCache {
     private static final SelectedPoint SELECTED_POINT = new SelectedPoint();
     private static final float BEZIER_PICK_EXPAND = 0.1f;
 
+    private static final Vector3f NATIVE_POS = new Vector3f();
+    private static final Vector3f NATIVE_ROT = new Vector3f();
+
     /*static {
         // 测试数据
         TRACK = new GlobalCameraPath("test");
@@ -173,6 +176,20 @@ public class CameraAnimIdeCache {
 
     public static MoveModeData getMoveMode() {
         return MOVE_DATA;
+    }
+
+    public static void setNative(Vector3f pos, Vector3f rot) {
+        NATIVE_POS.set(pos);
+        NATIVE_ROT.set(rot);
+        PATH.setNativeMode(true);
+    }
+
+    public static Vector3f getNativePos() {
+        return NATIVE_POS;
+    }
+
+    public static Vector3f getNativeRot() {
+        return NATIVE_ROT;
     }
 
     public static class SelectedPoint {

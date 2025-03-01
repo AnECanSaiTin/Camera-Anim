@@ -1,16 +1,19 @@
 package cn.anecansaitin.cameraanim.common.network;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
+import cn.anecansaitin.cameraanim.client.ClientUtil;
 import cn.anecansaitin.cameraanim.client.network.ClientPayloadManager;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.data_entity.GlobalCameraPathInfo;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
@@ -60,6 +63,22 @@ public record S2CPayloadReply(CompoundTag tag) implements CustomPacketPayload {
             }
 
             ClientPayloadManager.INSTANCE.getGlobalPath(path, succeed, tag.getInt("receiver"), context);
+            return null;
+        });
+        HANDLERS.put("getNativePath", (tag, context) -> {
+            boolean succeed = tag.getBoolean("succeed");
+            GlobalCameraPath path;
+            Entity entity;
+
+            if (succeed) {
+                path = GlobalCameraPath.fromNBT(tag.getCompound("path"));
+                entity = Minecraft.getInstance().level.getEntity(tag.getInt("center"));
+            } else {
+                path = null;
+                entity = null;
+            }
+
+            ClientPayloadManager.INSTANCE.getNativePath(path, entity, succeed, context);
             return null;
         });
     }

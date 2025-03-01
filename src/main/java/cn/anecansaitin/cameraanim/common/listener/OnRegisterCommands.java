@@ -13,6 +13,7 @@ import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,6 +25,8 @@ import java.util.List;
 @EventBusSubscriber(modid = CameraAnim.MODID)
 public class OnRegisterCommands {
     private static final Component PLAY_ANIM_FAILURE = Component.translatable("commands.cameraanim.play.failure");
+    private static final Component PLAY_NATIVE_ANIM_FAILURE = Component.translatable("commands.cameraanim.play.native.failure");
+
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
@@ -40,7 +43,7 @@ public class OnRegisterCommands {
                                     }
                                 })
                                 .then(Commands.argument("Target", EntityArgument.players())
-                                        .then(Commands.argument("Anim Id", StringArgumentType.greedyString())
+                                        .then(Commands.argument("Anim Id", StringArgumentType.string())
                                                 .executes(context -> {
                                                     EntitySelector target = context.getArgument("Target", EntitySelector.class);
                                                     List<ServerPlayer> players = target.findPlayers(context.getSource());
@@ -64,6 +67,37 @@ public class OnRegisterCommands {
 
                                                     return 1;
                                                 })
+                                                .then(Commands.argument("Center", EntityArgument.entity())
+                                                        .executes(context -> {
+                                                            EntitySelector target = context.getArgument("Target", EntitySelector.class);
+                                                            List<ServerPlayer> players = target.findPlayers(context.getSource());
+
+                                                            if (players.isEmpty()) {
+                                                                return 1;
+                                                            }
+
+                                                            ServerPlayer player = players.getFirst();
+                                                            String animId = context.getArgument("Anim Id", String.class);
+                                                            GlobalCameraSavedData data = GlobalCameraSavedData.getData((ServerLevel) player.level());
+                                                            GlobalCameraPath path = data.getPath(animId);
+
+                                                            if (path == null) {
+                                                                context.getSource().sendFailure(PLAY_ANIM_FAILURE.copy().append(animId));
+                                                                return 1;
+                                                            } else if (!path.isNativeMode()) {
+                                                                context.getSource().sendFailure(PLAY_NATIVE_ANIM_FAILURE.copy().append(animId));
+                                                                return 1;
+                                                            }
+
+                                                            EntitySelector center = context.getArgument("Center", EntitySelector.class);
+                                                            Entity centerEntity = center.findSingleEntity(context.getSource());
+
+                                                            for (ServerPlayer serverPlayer : players) {
+                                                                ServerPayloadSender.sendNativePath(path, serverPlayer, centerEntity);
+                                                            }
+
+                                                            return 1;
+                                                        }))
                                         ))
                         )
 

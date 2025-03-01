@@ -50,6 +50,10 @@ public class ModifyModeOverlay implements LayeredDraw.Layer {
             guiGraphics.drawString(font(), DRAG.copy().append(": ").append(mouseRight.getDisplayName()), 0, 10 * i++, 0xffffff);
             KeyMapping delete = DELETE_GLOBAL_CAMERA_POINT.get();
             guiGraphics.drawString(font(), Component.translatable(delete.getName()).append(": ").append(delete.getTranslatedKeyMessage()), 0, 10 * i++, 0xffffff);
+            KeyMapping nativeCenter = NATIVE_CENTER.get();
+            guiGraphics.drawString(font(), Component.translatable(nativeCenter.getName()).append(": ").append(nativeCenter.getTranslatedKeyMessage()), 0, 10 * i++, 0xffffff);
+            KeyMapping removeNativeCenter = REMOVE_NATIVE_CENTER.get();
+            guiGraphics.drawString(font(), Component.translatable(removeNativeCenter.getName()).append(": ").append(removeNativeCenter.getTranslatedKeyMessage()), 0, 10 * i++, 0xffffff);
         } else if (CameraAnimIdeCache.VIEW) {
             KeyMapping view = VIEW_MODE.get();
             guiGraphics.drawString(font(), Component.translatable(view.getName()).append(": ").append(view.getTranslatedKeyMessage()).append(OPEN), 0, 0, 0xffffff);

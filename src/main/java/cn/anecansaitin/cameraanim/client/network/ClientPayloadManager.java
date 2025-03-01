@@ -10,8 +10,10 @@ import cn.anecansaitin.cameraanim.common.data_entity.GlobalCameraPathInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.List;
 
@@ -56,6 +58,13 @@ public class ClientPayloadManager {
         switch (receiver) {
             case 0 -> {
                 if (succeed && path != null) {
+                    if (path.isNativeMode()) {
+                        Vector3f pos = ClientUtil.player().position().toVector3f();
+                        float v = ClientUtil.playerYHeadRot();
+                        path = path.fromNative(pos, v);
+                        CameraAnimIdeCache.setNative(pos, new Vector3f(0, v, 0));
+                    }
+
                     CameraAnimIdeCache.setPath(path);
                     ClientUtil.pushGuiLayer(new InfoScreen(GET_GLOBAL_PATH_SUCCESS));
                 } else {
@@ -68,6 +77,13 @@ public class ClientPayloadManager {
                     ClientUtil.toThirdView();
                 }
             }
+        }
+    }
+
+    public void getNativePath(@Nullable GlobalCameraPath path, @Nullable Entity entity, boolean succeed, IPayloadContext context) {
+        if (succeed && path != null && entity != null) {
+            Animator.INSTANCE.setPathAndPlay(path, entity.position().toVector3f(), new Vector3f(0, entity.getYRot(), 0));
+            ClientUtil.toThirdView();
         }
     }
 }
