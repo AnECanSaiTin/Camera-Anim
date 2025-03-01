@@ -3,6 +3,7 @@ package cn.anecansaitin.cameraanim.common.animation;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 /// 相机点位
@@ -118,6 +119,22 @@ public class CameraKeyframe {
 
     public void setFovTimeInterpolator(TimeInterpolator type) {
         this.fovType = type;
+    }
+
+    public CameraKeyframe copy() {
+        return new CameraKeyframe(
+                new Vector3f(pos.x, pos.y, pos.z),
+                new Vector3f(rot.x, rot.y, rot.z),
+                fov,
+                pathType,
+                new Vec3BezierController(new Vector3f(pathBezier.getLeft()), new Vector3f(pathBezier.getRight())),
+                posType,
+                new TimeBezierController(new Vector2f(posBezier.getLeft()), new Vector2f(posBezier.getRight())),
+                rotType,
+                new TimeBezierController(new Vector2f(rotBezier.getLeft()), new Vector2f(rotBezier.getRight())),
+                fovType,
+                new TimeBezierController(new Vector2f(fovBezier.getLeft()), new Vector2f(fovBezier.getRight()))
+        );
     }
 
     public static CompoundTag toNBT(CameraKeyframe keyframe) {

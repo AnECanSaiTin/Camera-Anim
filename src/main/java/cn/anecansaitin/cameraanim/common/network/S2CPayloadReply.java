@@ -4,9 +4,11 @@ import cn.anecansaitin.cameraanim.client.network.ClientPayloadManager;
 import cn.anecansaitin.cameraanim.common.ModNetwork;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.data_entity.GlobalCameraPathInfo;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
@@ -55,6 +57,22 @@ public record S2CPayloadReply(CompoundTag tag) {
             }
 
             ClientPayloadManager.INSTANCE.getGlobalPath(path, succeed, tag.getInt("receiver"), context);
+            return null;
+        });
+        HANDLERS.put("getNativePath", (tag, context) -> {
+            boolean succeed = tag.getBoolean("succeed");
+            GlobalCameraPath path;
+            Entity entity;
+
+            if (succeed) {
+                path = GlobalCameraPath.fromNBT(tag.getCompound("path"));
+                entity = Minecraft.getInstance().level.getEntity(tag.getInt("center"));
+            } else {
+                path = null;
+                entity = null;
+            }
+
+            ClientPayloadManager.INSTANCE.getNativePath(path, entity, succeed, context);
             return null;
         });
     }

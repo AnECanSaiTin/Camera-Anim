@@ -174,7 +174,22 @@ public class OnLevelRender {
 
         renderCamera(pose, buffer);
 
+        renderNativeCenter(pose, buffer);
+
         bufferSource.endBatch(RenderType.LINES);
+    }
+
+    private static void renderNativeCenter(PoseStack.Pose pose, VertexConsumer buffer) {
+        if (getPath().isNativeMode()) {
+            addLine(buffer, pose, getNativePos().add(0.5f, 0.1f, 0.5f, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(-0.5f, 0.1f, 0.5f, V_CACHE_2).sub(CAMERA_CACHE), 0xffe76767);
+            addLine(buffer, pose, getNativePos().add(-0.5f, 0.1f, 0.5f, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(-0.5f, 0.1f, -0.5f, V_CACHE_2).sub(CAMERA_CACHE), 0xffe76767);
+            addLine(buffer, pose, getNativePos().add(-0.5f, 0.1f, -0.5f, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(0.5f, 0.1f, -0.5f, V_CACHE_2).sub(CAMERA_CACHE), 0xffe76767);
+            addLine(buffer, pose, getNativePos().add(0.5f, 0.1f, -0.5f, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(0.5f, 0.1f, 0.5f, V_CACHE_2).sub(CAMERA_CACHE), 0xffe76767);
+            addLine(buffer, pose, getNativePos().add(0.5f, 0.1f, 0.5f, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(-0.5f, 0.1f, -0.5f, V_CACHE_2).sub(CAMERA_CACHE), 0xffe76767);
+            addLine(buffer, pose, getNativePos().add(0.5f, 0.1f, -0.5f, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(-0.5f, 0.1f, 0.5f, V_CACHE_2).sub(CAMERA_CACHE), 0xffe76767);
+            Vector3f rot = V_CACHE_4.set(0, 0.1f, -2).rotateY((180 - getNativeRot().y) * Mth.DEG_TO_RAD);
+            addLine(buffer, pose, getNativePos().add(0, 0.1f, 0, V_CACHE_3).sub(CAMERA_CACHE), getNativePos().add(rot, V_CACHE_2).sub(CAMERA_CACHE), 0xff00ff00);
+        }
     }
 
     private static void renderCamera(PoseStack.Pose pose, VertexConsumer buffer) {

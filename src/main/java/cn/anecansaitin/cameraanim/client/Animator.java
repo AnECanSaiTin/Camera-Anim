@@ -4,6 +4,8 @@ import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.animation.TimeInterpolator;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import org.joml.Matrix3f;
 import org.joml.Vector3f;
 
 import java.util.Map;
@@ -17,6 +19,10 @@ public class Animator {
     private GlobalCameraPath path;
     private boolean playing;
     private int time;
+
+    private final Vector3f center = new Vector3f();
+    private final Vector3f rotation = new Vector3f();
+    private final Matrix3f rotationMatrix = new Matrix3f();
 
     public void tick() {
         if (!playing || path == null) {
@@ -64,6 +70,16 @@ public class Animator {
 
     public void setPathAndPlay(GlobalCameraPath path) {
         this.path = path;
+        resetAndPlay();
+    }
+
+    public void setPathAndPlay(GlobalCameraPath path, Vector3f center, Vector3f rotation) {
+        this.path = path;
+        this.center.set(center);
+        this.rotation.set(rotation);
+        rotationMatrix
+                .identity()
+                .rotateY((360 - rotation.y) * Mth.DEG_TO_RAD);
         resetAndPlay();
     }
 
@@ -156,6 +172,11 @@ public class Animator {
             posDest.set(current.getPos());
             rotDest.set(current.getRot());
             fov[0] = current.getFov();
+        }
+
+        if (path.isNativeMode()) {
+            rotationMatrix.transform(posDest).add(center);
+            rotDest.add(rotation);
         }
 
         return true;

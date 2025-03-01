@@ -134,6 +134,24 @@ public class ModKeyMapping {
                     "key.categories." + CameraAnim.MODID
             ));
 
+    public static final Lazy<KeyMapping> NATIVE_CENTER = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".native_center",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
+    public static final Lazy<KeyMapping> REMOVE_NATIVE_CENTER = register(
+            new KeyMapping(
+                    "key." + CameraAnim.MODID + ".remove_native_center",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_UNKNOWN,
+                    "key.categories." + CameraAnim.MODID
+            ));
+
     private static Lazy<KeyMapping> register(KeyMapping key) {
         Lazy<KeyMapping> lazy = Lazy.of(() -> key);
         list.add(lazy);

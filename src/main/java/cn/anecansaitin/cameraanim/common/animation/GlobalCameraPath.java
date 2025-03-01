@@ -1,12 +1,14 @@
 package cn.anecansaitin.cameraanim.common.animation;
 
-import cn.anecansaitin.cameraanim.client.ClientUtil;
 import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -15,7 +17,6 @@ import java.util.UUID;
 
 /// 全局相机轨迹
 public class GlobalCameraPath {
-    public static final GlobalCameraPath NULL = new NullPath();
     private final TreeMap<Integer, CameraKeyframe> keyframes;
     private final Int2ObjectOpenHashMap<CameraKeyframe> keyframeMapCache;
     private final ArrayList<CameraKeyframe> keyframeListCache;
@@ -23,6 +24,8 @@ public class GlobalCameraPath {
     private final String id;
     private long version;
     private UUID lastModifier;
+
+    private boolean nativeMode;
 
     public GlobalCameraPath(String id, @Nullable Player lastModifier) {
         keyframes = new TreeMap<>();
@@ -48,6 +51,16 @@ public class GlobalCameraPath {
         keyframeListCache = new ArrayList<>(keyframes.values());
         this.version = version;
         this.lastModifier = lastModifier;
+    }
+
+    private GlobalCameraPath(TreeMap<Integer, CameraKeyframe> keyframes, String id, long version, UUID lastModifier, boolean nativeMode) {
+        this.keyframes = keyframes;
+        this.id = id;
+        keyframeMapCache = new Int2ObjectOpenHashMap<>(keyframes);
+        keyframeListCache = new ArrayList<>(keyframes.values());
+        this.version = version;
+        this.lastModifier = lastModifier;
+        this.nativeMode = nativeMode;
     }
 
     /// 把点加入到指定时间
@@ -212,7 +225,7 @@ public class GlobalCameraPath {
     }
 
     public GlobalCameraPath resetID(String id) {
-        return new GlobalCameraPath(keyframes, id, version, lastModifier);
+        return new GlobalCameraPath(keyframes, id, version, lastModifier, nativeMode);
     }
 
     public long getVersion() {
@@ -231,6 +244,47 @@ public class GlobalCameraPath {
         this.lastModifier = lastModifier;
     }
 
+    public boolean isNativeMode() {
+        return nativeMode;
+    }
+
+    public void setNativeMode(boolean nativeMode) {
+        this.nativeMode = nativeMode;
+    }
+
+    public GlobalCameraPath toNative(Vector3f pos, float yRot) {
+        TreeMap<Integer, CameraKeyframe> map = new TreeMap<>();
+
+        for (Map.Entry<Integer, CameraKeyframe> entry : keyframes.entrySet()) {
+            map.put(entry.getKey(), entry.getValue().copy());
+        }
+
+        Matrix3f matrix3f = new Matrix3f();
+        matrix3f.rotateY(yRot * Mth.DEG_TO_RAD);
+
+        for (CameraKeyframe keyframe : map.values()) {
+            Vector3f pos1 = keyframe.getPos().sub(pos);
+            matrix3f.transform(pos1);
+            keyframe.getRot().sub(0, yRot, 0);
+        }
+
+        return new GlobalCameraPath(map, id, version, lastModifier, true);
+    }
+
+    public GlobalCameraPath fromNative(Vector3f pos, float yRot) {
+        TreeMap<Integer, CameraKeyframe> map = new TreeMap<>(keyframes);
+        Matrix3f matrix3f = new Matrix3f();
+        matrix3f.rotateY((360 - yRot) * Mth.DEG_TO_RAD);
+
+        for (CameraKeyframe keyframe : map.values()) {
+            Vector3f pos1 = matrix3f.transform(keyframe.getPos());
+            pos1.add(pos);
+            keyframe.getRot().add(0, yRot, 0);
+        }
+
+       return new GlobalCameraPath(map, id, version, lastModifier, true);
+    }
+
     public String toJsonString(Gson gson) {
         return gson.toJson(keyframes);
     }
@@ -240,6 +294,7 @@ public class GlobalCameraPath {
         root.putString("id", path.id);
         root.putLong("version", path.version);
         root.putUUID("lastModifier", path.lastModifier);
+        root.putBoolean("native", path.nativeMode);
         ListTag keyframes = new ListTag();
 
         for (Map.Entry<Integer, CameraKeyframe> entry : path.keyframes.entrySet()) {
@@ -267,29 +322,7 @@ public class GlobalCameraPath {
         String id = root.getString("id");
         long version = root.getLong("version");
         UUID lastModifier = root.getUUID("lastModifier");
-        return new GlobalCameraPath(map, id, version, lastModifier);
-    }
-
-    private static class NullPath extends GlobalCameraPath {
-        public NullPath() {
-            super("null", null);
-        }
-
-        @Override
-        public void add(int time, CameraKeyframe point) {
-        }
-
-        @Override
-        public void add(CameraKeyframe point) {
-        }
-
-        @Override
-        public void remove(int index) {
-        }
-
-        @Override
-        public CameraKeyframe getPoint(int index) {
-            return CameraKeyframe.NULL;
-        }
+        boolean nativeMode = root.getBoolean("native");
+        return new GlobalCameraPath(map, id, version, lastModifier, nativeMode);
     }
 }

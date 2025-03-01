@@ -138,5 +138,21 @@ public class ModKeyClicked {
 
             CameraAnimIdeCache.setPath(new GlobalCameraPath("id"));
         }
+
+        while (ModKeyMapping.NATIVE_CENTER.get().consumeClick()) {
+            if (!CameraAnimIdeCache.EDIT) {
+                continue;
+            }
+
+            CameraAnimIdeCache.setNative(ClientUtil.player().position().toVector3f(), new Vector3f(0, Mth.wrapDegrees(ClientUtil.playerYHeadRot()), 0));
+        }
+
+        while (ModKeyMapping.REMOVE_NATIVE_CENTER.get().consumeClick()) {
+            if (!CameraAnimIdeCache.EDIT) {
+                continue;
+            }
+
+            CameraAnimIdeCache.getPath().setNativeMode(false);
+        }
     }
 }

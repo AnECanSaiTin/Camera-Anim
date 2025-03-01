@@ -72,6 +72,10 @@ public class RemotePathSearchScreen extends Screen {
                     track = track.resetID(newId.getValue());
                 }
 
+                if (track.isNativeMode()) {
+                    track = track.toNative(CameraAnimIdeCache.getNativePos(), CameraAnimIdeCache.getNativeRot().y);
+                }
+
                 ClientPayloadSender.putGlobalPath(track);
             }
         }));
