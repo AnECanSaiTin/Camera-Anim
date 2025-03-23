@@ -1,13 +1,14 @@
 package cn.anecansaitin.cameraanim.client.gui.screen;
 
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.enums.ControlType;
 import cn.anecansaitin.cameraanim.client.gui.widget.NumberEditBox;
+import cn.anecansaitin.cameraanim.client.ide.SelectedPoint;
+import cn.anecansaitin.cameraanim.client.util.ClientUtil;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
-import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
-import net.minecraft.client.Minecraft;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.PathInterpolator;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,8 +17,6 @@ import net.neoforged.neoforge.client.gui.widget.ExtendedButton;
 import org.joml.Vector3f;
 
 public class PointSettingScreen extends Screen {
-    private final NumberEditBox[] numbers = new NumberEditBox[5];
-    private CycleButton<PathInterpolator> type;
     private static final Component POS = Component.translatable("gui.camera_anim.point_setting.pos");
     private static final Component ROT = Component.translatable("gui.camera_anim.point_setting.rot");
     private static final Component ZOOM = Component.translatable("gui.camera_anim.point_setting.zoom");
@@ -31,133 +30,168 @@ public class PointSettingScreen extends Screen {
     private static final Component TIP = Component.translatable("gui.camera_anim.point_setting.tip");
     private static final Component INTERPOLATION = Component.translatable("gui.camera_anim.point_setting.interpolation");
 
+    private static final int CONTENT_WIDTH = 300;
+    private static final int CONTENT_HEIGHT = 160;
+    private static final int FIELD_WIDTH = 50;
+    private static final int FIELD_HEIGHT = 10;
+    private static final int BUTTON_WIDTH = 90;
+    private static final int SMALL_BUTTON_WIDTH = 50;
+    private static final int SPACING = 5;
+
+    private final NumberEditBox[] positionFields = new NumberEditBox[3];
+    private final NumberEditBox[] rotationFields = new NumberEditBox[3];
+    private NumberEditBox zoomField;
+    private NumberEditBox durationField;
+    private CycleButton<PathInterpolator> typeButton;
+    private StringWidget infoWidget;
+
+    private int baseX;
+    private int baseY;
+
     public PointSettingScreen() {
         super(Component.literal("Point Setting"));
     }
 
     @Override
     protected void init() {
-        CameraAnimIdeCache.SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
+        this.baseX = (this.width - CONTENT_WIDTH) / 2;
+        this.baseY = (this.height - CONTENT_HEIGHT) / 2;
+
+        SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
         GlobalCameraPath track = CameraAnimIdeCache.getPath();
         int time = selectedPoint.getPointTime();
         Vector3f pos = selectedPoint.getPosition();
         if (pos == null) return;
 
-        int x = 20;
-        int y = 20;
-
-        addRenderableOnly(new StringWidget(x + 1, y + 2, 30, 10, POS, font));
-        NumberEditBox[] xyz = new NumberEditBox[3];
-        xyz[0] = new NumberEditBox(font, x + 37, y + 2, 50, 10, pos.x, Component.literal("x"));
-        xyz[1] = new NumberEditBox(font, x + 92, y + 2, 50, 10, pos.y, Component.literal("y"));
-        xyz[2] = new NumberEditBox(font, x + 147, y + 2, 50, 10, pos.z, Component.literal("z"));
-        addRenderableWidget(xyz[0]);
-        addRenderableWidget(xyz[1]);
-        addRenderableWidget(xyz[2]);
-
-        if (selectedPoint.getControl() == CameraAnimIdeCache.ControlType.NONE) {
-            addRenderableWidget(new ExtendedButton(x + 202 , y + 2, 90, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(1))));
+        initPositionFields(pos);
+        if (selectedPoint.getControl() == ControlType.NONE) {
             CameraKeyframe point = track.getPoint(time);
-            assert point != null;// pos不为null，则point不为null
-            float fov = point.getFov();
-            Vector3f rot = point.getRot();
-            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10, 30, 10, ROT, font));
-            numbers[0] = new NumberEditBox(font, x + 37, y + 2 + 10, 50, 10, rot.x, Component.literal("xRot"));
-            addRenderableWidget(numbers[0]);
-            numbers[1] = new NumberEditBox(font, x + 92, y + 2 + 10, 50, 10, rot.y, Component.literal("yRot"));
-            addRenderableWidget(numbers[1]);
-            numbers[2] = new NumberEditBox(font, x + 147, y + 2 + 10, 50, 10, rot.z, Component.literal("zRot"));
-            addRenderableWidget(numbers[2]);
-            addRenderableWidget(new ExtendedButton(x + 202 , y + 2 + 10, 90, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(2))));
-            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10, 30, 10, ZOOM, font));
-            numbers[3] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10, 50, 10, fov, Component.literal("zoom"));
-            addRenderableWidget(numbers[3]);
-            addRenderableWidget(new ExtendedButton(x + 92 , y + 2 + 10 + 10, 90, 10, INTERPOLATION, b -> Minecraft.getInstance().pushGuiLayer(new InterpolationSettingScreen(3))));
-            type = CycleButton
-                    .builder(PathInterpolator::getDisplayName)
-                    .withValues(PathInterpolator.values())
-                    .withInitialValue(point.getPathInterpolator())
-                    .create(x + 37, y + 2 + 10 + 10 + 10, 65, 11, TYPE, (b, t) -> {
-                    });
-            addRenderableWidget(type);
-            addRenderableOnly(new StringWidget(x + 1, y + 2 + 10 + 10 + 10 + 11, 30, 10, TIME, font));
-            numbers[4] = new NumberEditBox(font, x + 37, y + 2 + 10 + 10 + 10 + 11, 50, 10, time, Component.literal("time"));
-            addRenderableWidget(numbers[4]);
+            assert point != null;
+            initRotationFields(point.getRot());
+            initZoomField(point.getFov());
+            initTypeButton(point.getPathInterpolator());
+            initDurationField(time);
         }
+        initInfoAndTip();
+        initSaveButton(selectedPoint, track, pos, time);
+    }
 
-        StringWidget info = new StringWidget(x + 1, y + 2 + 10 + 10 + 40, 100, 10, Component.literal(""), font);
-        addRenderableOnly(info);
-        addRenderableOnly(new StringWidget(x, y + 2 + 10 + 10 + 60, 300, 10, TIP, font));
+    private void initPositionFields(Vector3f pos) {
+        addRenderableOnly(new StringWidget(baseX + 1, baseY + 2, 30, FIELD_HEIGHT, POS, font));
+        positionFields[0] = new NumberEditBox(font, baseX + 37, baseY + 2, FIELD_WIDTH, FIELD_HEIGHT, pos.x, Component.literal("x"));
+        positionFields[1] = new NumberEditBox(font, baseX + 92, baseY + 2, FIELD_WIDTH, FIELD_HEIGHT, pos.y, Component.literal("y"));
+        positionFields[2] = new NumberEditBox(font, baseX + 147, baseY + 2, FIELD_WIDTH, FIELD_HEIGHT, pos.z, Component.literal("z"));
+        addRenderableWidget(positionFields[0]);
+        addRenderableWidget(positionFields[1]);
+        addRenderableWidget(positionFields[2]);
+        addRenderableWidget(new ExtendedButton(baseX + 202, baseY + 2, BUTTON_WIDTH, FIELD_HEIGHT, INTERPOLATION, b -> {
+            ClientUtil.pushGuiLayer(new InterpolationSettingScreen(1));
+        }));
+    }
 
-        Button button = Button
-                .builder(SAVE, (b) -> {
-                    float xn, yn, zn;
+    private void initRotationFields(Vector3f rot) {
+        addRenderableOnly(new StringWidget(baseX + 1, baseY + 2 + FIELD_HEIGHT + SPACING, 30, FIELD_HEIGHT, ROT, font));
+        rotationFields[0] = new NumberEditBox(font, baseX + 37, baseY + 2 + FIELD_HEIGHT + SPACING, FIELD_WIDTH, FIELD_HEIGHT, rot.x, Component.literal("xRot"));
+        rotationFields[1] = new NumberEditBox(font, baseX + 92, baseY + 2 + FIELD_HEIGHT + SPACING, FIELD_WIDTH, FIELD_HEIGHT, rot.y, Component.literal("yRot"));
+        rotationFields[2] = new NumberEditBox(font, baseX + 147, baseY + 2 + FIELD_HEIGHT + SPACING, FIELD_WIDTH, FIELD_HEIGHT, rot.z, Component.literal("zRot"));
+        addRenderableWidget(rotationFields[0]);
+        addRenderableWidget(rotationFields[1]);
+        addRenderableWidget(rotationFields[2]);
+        addRenderableWidget(new ExtendedButton(baseX + 202, baseY + 2 + FIELD_HEIGHT + SPACING, BUTTON_WIDTH, FIELD_HEIGHT, INTERPOLATION, b -> ClientUtil.pushGuiLayer(new InterpolationSettingScreen(2))));
+    }
 
-                    try {
-                        xn = Float.parseFloat(xyz[0].getValue());
-                        yn = Float.parseFloat(xyz[1].getValue());
-                        zn = Float.parseFloat(xyz[2].getValue());
-                    } catch (NumberFormatException e) {
-                        info.setMessage(POS_ERROR);
+    private void initZoomField(float fov) {
+        addRenderableOnly(new StringWidget(baseX + 1, baseY + 2 + 2 * (FIELD_HEIGHT + SPACING), 30, FIELD_HEIGHT, ZOOM, font));
+        zoomField = new NumberEditBox(font, baseX + 37, baseY + 2 + 2 * (FIELD_HEIGHT + SPACING), FIELD_WIDTH, FIELD_HEIGHT, fov, Component.literal("zoom"));
+        addRenderableWidget(zoomField);
+        addRenderableWidget(new ExtendedButton(baseX + 202, baseY + 2 + 2 * (FIELD_HEIGHT + SPACING), BUTTON_WIDTH, FIELD_HEIGHT, INTERPOLATION, b -> ClientUtil.pushGuiLayer(new InterpolationSettingScreen(3))));
+    }
+
+    private void initTypeButton(PathInterpolator initialType) {
+        addRenderableOnly(new StringWidget(baseX + 1, baseY + 2 + 3 * (FIELD_HEIGHT + SPACING), 30, FIELD_HEIGHT, TYPE, font));
+        typeButton = CycleButton.builder(PathInterpolator::getDisplayName)
+                .withValues(PathInterpolator.values())
+                .withInitialValue(initialType)
+                .create(baseX + 37, baseY + 2 + 3 * (FIELD_HEIGHT + SPACING), 65, FIELD_HEIGHT + 1, TYPE, (b, t) -> {
+                });
+        addRenderableWidget(typeButton);
+    }
+
+    private void initDurationField(int time) {
+        addRenderableOnly(new StringWidget(baseX + 1, baseY + 2 + 4 * (FIELD_HEIGHT + SPACING), 30, FIELD_HEIGHT, TIME, font));
+        durationField = new NumberEditBox(font, baseX + 37, baseY + 2 + 4 * (FIELD_HEIGHT + SPACING), FIELD_WIDTH, FIELD_HEIGHT, time, Component.literal("time"));
+        addRenderableWidget(durationField);
+    }
+
+    private void initInfoAndTip() {
+        infoWidget = new StringWidget(baseX + 1, baseY + 2 + 5 * (FIELD_HEIGHT + SPACING), 100, FIELD_HEIGHT, Component.literal(""), font);
+        addRenderableOnly(infoWidget);
+        addRenderableOnly(new StringWidget(baseX, baseY + 2 + 6 * (FIELD_HEIGHT + SPACING), CONTENT_WIDTH, FIELD_HEIGHT, TIP, font));
+    }
+
+    private void initSaveButton(SelectedPoint selectedPoint, GlobalCameraPath track, Vector3f pos, int time) {
+        addRenderableWidget(new ExtendedButton(baseX + 202, baseY + 3 * (FIELD_HEIGHT + SPACING), SMALL_BUTTON_WIDTH, FIELD_HEIGHT + 4, SAVE, b -> {
+            float xn = positionFields[0].getFloatValue(pos.x);
+            float yn = positionFields[1].getFloatValue(pos.y);
+            float zn = positionFields[2].getFloatValue(pos.z);
+
+            if (!isValidNumber(positionFields[0].getValue()) || !isValidNumber(positionFields[1].getValue()) || !isValidNumber(positionFields[2].getValue())) {
+                infoWidget.setMessage(POS_ERROR);
+                return;
+            }
+
+            switch (selectedPoint.getControl()) {
+                case LEFT, RIGHT -> {
+                    pos.set(xn, yn, zn);
+                    onClose();
+                }
+                case NONE -> {
+                    CameraKeyframe point = track.getPoint(time);
+                    assert point != null;
+                    pos.set(xn, yn, zn);
+
+                    if (!isValidNumber(rotationFields[0].getValue()) || !isValidNumber(rotationFields[1].getValue()) || !isValidNumber(rotationFields[2].getValue())) {
+                        infoWidget.setMessage(ROT_ERROR);
                         return;
                     }
 
-                    switch (selectedPoint.getControl()) {
-                        case LEFT, RIGHT -> {
-                            pos.set(xn, yn, zn);
-                            onClose();
-                        }
-                        case NONE -> {
-                            CameraKeyframe point = track.getPoint(time);
-                            assert point != null;// pos不为null，则point不为null
-                            pos.set(xn, yn, zn);
+                    point.getRot().set(rotationFields[0].getFloatValue(0), rotationFields[1].getFloatValue(0), rotationFields[2].getFloatValue(0));
 
-                            try {
-                                float xRot = Float.parseFloat(numbers[0].getValue());
-                                float yRot = Float.parseFloat(numbers[1].getValue());
-                                float zRot = Float.parseFloat(numbers[2].getValue());
-                                point.getRot().set(xRot, yRot, zRot);
-                            } catch (NumberFormatException e) {
-                                info.setMessage(ROT_ERROR);
-                                return;
-                            }
-
-                            try {
-                                point.setFov(Float.parseFloat(numbers[3].getValue()));
-                            } catch (NumberFormatException e) {
-                                info.setMessage(ZOOM_ERROR);
-                                return;
-                            }
-
-                            if (point.getPathInterpolator() != type.getValue()) {
-                                point.setPathInterpolator(type.getValue());
-                                track.updateBezier(time);
-                            }
-
-                            try {
-                                int newTime = Integer.parseInt(numbers[4].getValue());
-                                track.setTime(time, newTime);
-                                onClose();
-                            } catch (NumberFormatException e) {
-                                info.setMessage(TIME_ERROR);
-                            }
-                        }
+                    if (!isValidNumber(zoomField.getValue())){
+                        infoWidget.setMessage(ZOOM_ERROR);
+                        return;
                     }
-                })
-                .pos(x + 202, y + 30)
-                .width(50)
-                .build();
-        addRenderableWidget(button);
+
+                    point.setFov(zoomField.getFloatValue(70));
+
+                    if (point.getPathInterpolator() != typeButton.getValue()) {
+                        point.setPathInterpolator(typeButton.getValue());
+                        track.updateBezier(time);
+                    }
+
+                    if (!isValidNumber(durationField.getValue())){
+                        infoWidget.setMessage(TIME_ERROR);
+                        return;
+                    }
+
+                    int newTime = (int) durationField.getFloatValue(70);
+                    track.setTime(time, newTime);
+                    onClose();
+                }
+            }
+        }));
+    }
+
+    private boolean isValidNumber(String text) {
+        return !text.trim().isEmpty() && text.matches("^-?\\d*[.,]?\\d+$");
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        int x = 20;
-        int y = 20;
-        guiGraphics.hLine(x, x + 300, y, 0xFF95e1d3);
-        guiGraphics.hLine(x, x + 300, y + 54, 0xFF95e1d3);
-        guiGraphics.vLine(x + 300, y, y + 54, 0xFF95e1d3);
-        guiGraphics.vLine(x, y, y + 54, 0xFF95e1d3);
+        guiGraphics.hLine(baseX, baseX + CONTENT_WIDTH, baseY, 0xFF95e1d3);
+        guiGraphics.hLine(baseX, baseX + CONTENT_WIDTH, baseY + CONTENT_HEIGHT, 0xFF95e1d3);
+        guiGraphics.vLine(baseX, baseY, baseY + CONTENT_HEIGHT, 0xFF95e1d3);
+        guiGraphics.vLine(baseX + CONTENT_WIDTH, baseY, baseY + CONTENT_HEIGHT, 0xFF95e1d3);
     }
 }

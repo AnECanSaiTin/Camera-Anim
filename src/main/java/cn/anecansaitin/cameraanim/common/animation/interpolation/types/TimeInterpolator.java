@@ -1,4 +1,4 @@
-package cn.anecansaitin.cameraanim.common.animation;
+package cn.anecansaitin.cameraanim.common.animation.interpolation.types;
 
 import net.minecraft.network.chat.Component;
 

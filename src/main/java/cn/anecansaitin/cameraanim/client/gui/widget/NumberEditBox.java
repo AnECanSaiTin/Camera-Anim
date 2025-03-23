@@ -20,10 +20,22 @@ public class NumberEditBox extends EditBox {
 
     @Override
     public void insertText(String textToWrite) {
-        if (!textToWrite.matches("^-?\\d*\\.?\\d*$")) {
+        if (!textToWrite.matches("^-?\\d*[.,]?\\d*$")) {
             return;
         }
 
         super.insertText(textToWrite);
+    }
+
+    public float getFloatValue(float defaultValue) {
+        try {
+            String text = getValue().trim().replace(',', '.');
+            if (text.isEmpty()) {
+                return defaultValue;
+            }
+            return Float.parseFloat(text);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 }

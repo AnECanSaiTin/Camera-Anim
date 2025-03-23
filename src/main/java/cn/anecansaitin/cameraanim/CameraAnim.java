@@ -11,7 +11,7 @@ import net.neoforged.fml.common.Mod;
 @Mod(CameraAnim.MODID)
 public class CameraAnim {
     public static final String MODID = "camera_anim";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public CameraAnim(IEventBus modEventBus, ModContainer modContainer) {
     }

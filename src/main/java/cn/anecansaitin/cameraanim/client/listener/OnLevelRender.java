@@ -1,15 +1,16 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.InterpolationMath;
-import cn.anecansaitin.cameraanim.client.Animator;
-import cn.anecansaitin.cameraanim.client.PreviewAnimator;
-import cn.anecansaitin.cameraanim.client.ClientUtil;
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.util.InterpolationMath;
+import cn.anecansaitin.cameraanim.client.animation.Animator;
+import cn.anecansaitin.cameraanim.client.animation.PreviewAnimator;
+import cn.anecansaitin.cameraanim.client.ide.SelectedPoint;
+import cn.anecansaitin.cameraanim.client.util.ClientUtil;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
-import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
-import cn.anecansaitin.cameraanim.common.animation.Vec3BezierController;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.PathInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.Vec3BezierController;
 import cn.anecansaitin.freecameraapi.CameraModifierManager;
 import cn.anecansaitin.freecameraapi.ICameraModifier;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -29,7 +30,7 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 
-import static cn.anecansaitin.cameraanim.client.CameraAnimIdeCache.*;
+import static cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class OnLevelRender {

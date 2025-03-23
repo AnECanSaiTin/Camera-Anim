@@ -1,5 +1,9 @@
 package cn.anecansaitin.cameraanim.common.animation;
 
+import cn.anecansaitin.cameraanim.common.animation.interpolation.TimeBezierController;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.Vec3BezierController;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.PathInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.TimeInterpolator;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;

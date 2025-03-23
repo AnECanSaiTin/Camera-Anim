@@ -1,16 +1,16 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.Animator;
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
-import cn.anecansaitin.cameraanim.client.PreviewAnimator;
-import cn.anecansaitin.cameraanim.client.ClientUtil;
+import cn.anecansaitin.cameraanim.client.animation.Animator;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.animation.PreviewAnimator;
+import cn.anecansaitin.cameraanim.client.util.ClientUtil;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-import static cn.anecansaitin.cameraanim.client.CameraAnimIdeCache.getPath;
+import static cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache.getPath;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class AnimatorTick {

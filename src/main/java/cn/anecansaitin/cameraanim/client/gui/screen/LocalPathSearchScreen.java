@@ -1,7 +1,7 @@
 package cn.anecansaitin.cameraanim.client.gui.screen;
 
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
-import cn.anecansaitin.cameraanim.client.ClientUtil;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.util.ClientUtil;
 import cn.anecansaitin.cameraanim.client.gui.widget.NumberEditBox;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
@@ -46,6 +46,8 @@ public class LocalPathSearchScreen extends Screen {
     private static final Component LOAD_ID = Component.translatable("gui.camera_anim.local_path_search.load_id");
     private static final Component SAVE = Component.translatable("gui.camera_anim.local_path_search.save");
     private static final Component SAVE_ID = Component.translatable("gui.camera_anim.local_path_search.save_id");
+    private static final Component DELETE = Component.translatable("gui.camera_anim.local_path_search.delete");
+    private static final Component DELETE_ID = Component.translatable("gui.camera_anim.local_path_search.delete_id");
     private static final Component REMOTE_MODE = Component.translatable("gui.camera_anim.local_path_search.remote_mode");
     private static final Component PATH_ID = Component.translatable("gui.camera_anim.local_path_search.path_id");
     private static final Component MODIFIER = Component.translatable("gui.camera_anim.local_path_search.modifier");
@@ -59,6 +61,8 @@ public class LocalPathSearchScreen extends Screen {
     private static final Component FILE_EXIST_ERROR = Component.translatable("gui.camera_anim.local_path_search.file_exist_error");
     private static final Component FILE_SAVE_ERROR = Component.translatable("gui.camera_anim.local_path_search.file_save_error");
     private static final Component FILE_LOAD_SUCCESS = Component.translatable("gui.camera_anim.local_path_search.file_load_success");
+    private static final Component FILE_DELETE_SUCCESS = Component.translatable("gui.camera_anim.local_path_search.file_delete_success");
+    private static final Component FILE_DELETE_ERROR = Component.translatable("gui.camera_anim.local_path_search.file_delete_error");
 
     public LocalPathSearchScreen() {
         super(Component.literal("local path search"));
@@ -69,10 +73,21 @@ public class LocalPathSearchScreen extends Screen {
         NumberEditBox page = addRenderableWidget(new NumberEditBox(font, 20, 20, 20, 20, 1, Component.literal("page")));
         EditBox path = addRenderableWidget(new EditBox(font, 205, 20, 50, 20, Component.literal("path id")));
         EditBox newId = addRenderableWidget(new EditBox(font, 315, 20, 50, 20, Component.literal("new id")));
+        EditBox removeId = addRenderableWidget(new EditBox(font, 315, 60, 50, 20, Component.literal("remove id")));
+
         newId.setValue(CameraAnimIdeCache.getPath().getId());
         addRenderableWidget(new ExtendedButton(45, 20, 100, 20, SEARCH, b -> searchFromFile(Integer.parseInt(page.getValue()), 16)));
         addRenderableWidget(new ExtendedButton(150, 20, 50, 20, LOAD, b -> getFromFile(path.getValue())));
         addRenderableWidget(new ExtendedButton(260, 20, 50, 20, SAVE, b -> saveToFile(newId.getValue())));
+        addRenderableWidget(new ExtendedButton(260, 60, 50, 20, DELETE, b -> {
+            String removeIdText = removeId.getValue().trim();
+
+            if (!removeIdText.isEmpty()) {
+                deleteFromFile(removeIdText);
+            } else {
+                ClientUtil.pushGuiLayer(new InfoScreen(Component.literal("Remove ID cannot be empty")));
+            }
+        }));
         addRenderableWidget(new ExtendedButton(260, 80, 70, 20, REMOTE_MODE, b -> Minecraft.getInstance().setScreen(new RemotePathSearchScreen())));
     }
 
@@ -82,20 +97,35 @@ public class LocalPathSearchScreen extends Screen {
         guiGraphics.drawString(font, PAGE, 25, 10, 0xffffffff);
         guiGraphics.drawString(font, LOAD_ID, 215, 10, 0xffffffff);
         guiGraphics.drawString(font, SAVE_ID, 325, 10, 0xffffffff);
-        guiGraphics.drawScrollingString(font, PATH_ID, 20, 50, 49, 0xffffffff);
-        guiGraphics.drawScrollingString(font, MODIFIER, 60, 90, 49, 0xffffffff);
-        guiGraphics.drawScrollingString(font, TIME, 100, 210, 49, 0xffffffff);
+        guiGraphics.drawString(font, DELETE_ID, 325, 50, 0xffffffff);
+
+        int headerY = 49;
+        int columnStartX = 5;
+        guiGraphics.drawScrollingString(font, PATH_ID, columnStartX + 5, columnStartX + 80, headerY, 0xffffffff);
+        guiGraphics.drawScrollingString(font, MODIFIER, columnStartX + 85, columnStartX + 140, headerY, 0xffffffff);
+        guiGraphics.drawScrollingString(font, TIME, columnStartX + 140, columnStartX + 300, headerY, 0xffffffff);
 
         if (!list.isEmpty()) {
             for (int i = 0, listSize = list.size(); i < listSize; i++) {
                 Triplet<Component, Component, Component> info = list.get(i);
-                guiGraphics.drawScrollingString(font, info.getA(), 20, 50, 60 + i * 11, 0xffffffff);
-                guiGraphics.drawScrollingString(font, info.getB(), 60, 90, 60 + i * 11, 0xffffffff);
-                guiGraphics.drawScrollingString(font, info.getC(), 100, 210, 60 + i * 11, 0xffffffff);
+                int rowY = 70 + i * 10;
+
+                guiGraphics.drawScrollingString(font, info.getA(), columnStartX + 5, columnStartX + 80, rowY, 0xffffffff);
+                guiGraphics.drawScrollingString(font, info.getB(), columnStartX + 85, columnStartX + 140, rowY, 0xffffffff);
+                guiGraphics.drawScrollingString(font, info.getC(), columnStartX + 140, columnStartX + 300, rowY, 0xffffffff);
             }
         } else {
-            guiGraphics.drawCenteredString(font, TIP, 180, 200, 0xffffffff);
+            guiGraphics.drawCenteredString(font, TIP, width / 2, height / 2, 0xffffffff);
         }
+
+        int tableWidth = 250;
+        int tableHeight = list.size() * 10;
+        int tableX = columnStartX;
+        int tableY = 69;
+        guiGraphics.hLine(tableX - 1, tableX + tableWidth, tableY - 1, 0xff95e1d3);
+        guiGraphics.hLine(tableX - 1, tableX + tableWidth, tableY + tableHeight, 0xff95e1d3);
+        guiGraphics.vLine(tableX - 1, tableY - 1, tableY + tableHeight, 0xff95e1d3);
+        guiGraphics.vLine(tableX + tableWidth, tableY - 1, tableY + tableHeight, 0xff95e1d3);
     }
 
     private void searchFromFile(int page, int size) {
@@ -141,7 +171,8 @@ public class LocalPathSearchScreen extends Screen {
                 JsonObject jsonObject = GSON.fromJson(json, JsonObject.class);
 
                 if (jsonObject.has("version") && jsonObject.get("version").getAsString().equals(SERIALIZER_VERSION)) {
-                    TypeToken<TreeMap<Integer, CameraKeyframe>> type = new TypeToken<>(){};
+                    TypeToken<TreeMap<Integer, CameraKeyframe>> type = new TypeToken<>() {
+                    };
                     TreeMap<Integer, CameraKeyframe> map = GSON.fromJson(jsonObject.get("anim"), type.getType());
                     CameraAnimIdeCache.setPath(new GlobalCameraPath(map, id));
                     ClientUtil.pushGuiLayer(new InfoScreen(FILE_LOAD_SUCCESS));
@@ -168,6 +199,22 @@ public class LocalPathSearchScreen extends Screen {
             Files.writeString(path, jsonObject.toString());
         } catch (IOException e) {
             ClientUtil.pushGuiLayer(new InfoScreen(FILE_SAVE_ERROR));
+        }
+    }
+
+    private void deleteFromFile(String id) {
+        try {
+            Path filePath = FMLPaths.GAMEDIR.get().resolve("camera-anim").resolve(id + ".json");
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                list.clear();
+                searchFromFile(1, 16);
+                ClientUtil.pushGuiLayer(new InfoScreen(FILE_DELETE_SUCCESS));
+            } else {
+                ClientUtil.pushGuiLayer(new InfoScreen(FILE_EXIST_ERROR));
+            }
+        } catch (IOException e) {
+            ClientUtil.pushGuiLayer(new InfoScreen(FILE_DELETE_ERROR));
         }
     }
 }

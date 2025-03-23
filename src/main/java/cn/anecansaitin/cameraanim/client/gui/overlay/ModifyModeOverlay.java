@@ -1,6 +1,6 @@
 package cn.anecansaitin.cameraanim.client.gui.overlay;
 
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -9,7 +9,7 @@ import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
-import static cn.anecansaitin.cameraanim.client.ClientUtil.font;
+import static cn.anecansaitin.cameraanim.client.util.ClientUtil.font;
 import static cn.anecansaitin.cameraanim.client.register.ModKeyMapping.*;
 
 public class ModifyModeOverlay implements LayeredDraw.Layer {

@@ -1,5 +1,6 @@
 package cn.anecansaitin.cameraanim.common.animation;
 
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.PathInterpolator;
 import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.nbt.CompoundTag;

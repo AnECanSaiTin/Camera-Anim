@@ -1,4 +1,4 @@
-package cn.anecansaitin.cameraanim.client;
+package cn.anecansaitin.cameraanim.client.util;
 
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -10,16 +10,18 @@ import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
 public final class ClientUtil {
+    private static final Minecraft MC = Minecraft.getInstance();
     private static final Vector3f EYE_POS = new Vector3f();
     private static final Vector3f VIEW = new Vector3f();
     private static CameraType cameraType = CameraType.FIRST_PERSON;
+    private static boolean bobView = false;
 
     public static LocalPlayer player() {
-        return Minecraft.getInstance().player;
+        return MC.player;
     }
 
     public static float partialTicks() {
-        return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
+        return MC.getDeltaTracker().getGameTimeDeltaPartialTick(true);
     }
 
     public static Vector3f playerEyePos() {
@@ -51,29 +53,50 @@ public final class ClientUtil {
     }
 
     public static boolean hideGui() {
-        return Minecraft.getInstance().options.hideGui;
+        return MC.options.hideGui;
     }
 
     public static boolean gamePaused() {
-        return Minecraft.getInstance().isPaused();
+        return MC.isPaused();
     }
 
     public static void pushGuiLayer(Screen screen) {
-        Minecraft.getInstance().pushGuiLayer(screen);
+        MC.pushGuiLayer(screen);
+    }
+
+    public static void popGuiLayer() {
+        MC.popGuiLayer();
     }
 
     public static void toThirdView() {
-        Options options = Minecraft.getInstance().options;
+        Options options = MC.options;
         cameraType = options.getCameraType();
         options.setCameraType(CameraType.THIRD_PERSON_BACK);
     }
 
     public static void resetCameraType() {
-        Options options = Minecraft.getInstance().options;
-        options.setCameraType(cameraType);
+        MC.options.setCameraType(cameraType);
     }
 
     public static Font font() {
-        return Minecraft.getInstance().font;
+        return MC.font;
+    }
+
+    /**
+     * Disable view bobbing to avoid annoying camera movements.
+     * Stores the current value to allow restoration later.
+     */
+    public static void disableBobView() {
+        Options options = MC.options;
+        bobView = options.bobView().get();
+        options.bobView().set(false);
+    }
+
+    /**
+     * Resets the view bobbing setting to the previously stored value.
+     * Typically used to revert changes made by {@link #disableBobView()}.
+     */
+    public static void resetBobView() {
+        MC.options.bobView().set(bobView);
     }
 }

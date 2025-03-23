@@ -1,7 +1,6 @@
 package cn.anecansaitin.cameraanim.common.network;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.ClientUtil;
 import cn.anecansaitin.cameraanim.client.network.ClientPayloadManager;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.data_entity.GlobalCameraPathInfo;

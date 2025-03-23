@@ -6,6 +6,10 @@ import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
 import cn.anecansaitin.cameraanim.common.network.ServerPayloadSender;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -21,6 +25,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @EventBusSubscriber(modid = CameraAnim.MODID)
 public class OnRegisterCommands {
@@ -33,23 +38,16 @@ public class OnRegisterCommands {
         dispatcher.register(
                 Commands.literal("cameraanim")
                         .then(Commands.literal("play")
-                                .requires(source -> {
-                                    if (source.source instanceof BaseCommandBlock) {
-                                        return true;
-                                    } else if (source.isPlayer()) {
-                                        return source.getServer().getProfilePermissions(source.getPlayer().getGameProfile()) > 1;
-                                    } else {
-                                        return false;
-                                    }
-                                })
+                                .requires(source -> source.hasPermission(2))
                                 .then(Commands.argument("Target", EntityArgument.players())
                                         .then(Commands.argument("Anim Id", StringArgumentType.string())
+                                                .suggests(OnRegisterCommands::suggestAnimationIds)
                                                 .executes(context -> {
                                                     EntitySelector target = context.getArgument("Target", EntitySelector.class);
                                                     List<ServerPlayer> players = target.findPlayers(context.getSource());
 
                                                     if (players.isEmpty()) {
-                                                        return 1;
+                                                        return 0;
                                                     }
 
                                                     ServerPlayer player = players.getFirst();
@@ -73,7 +71,7 @@ public class OnRegisterCommands {
                                                             List<ServerPlayer> players = target.findPlayers(context.getSource());
 
                                                             if (players.isEmpty()) {
-                                                                return 1;
+                                                                return 0;
                                                             }
 
                                                             ServerPlayer player = players.getFirst();
@@ -83,10 +81,10 @@ public class OnRegisterCommands {
 
                                                             if (path == null) {
                                                                 context.getSource().sendFailure(PLAY_ANIM_FAILURE.copy().append(animId));
-                                                                return 1;
+                                                                return 0;
                                                             } else if (!path.isNativeMode()) {
                                                                 context.getSource().sendFailure(PLAY_NATIVE_ANIM_FAILURE.copy().append(animId));
-                                                                return 1;
+                                                                return 0;
                                                             }
 
                                                             EntitySelector center = context.getArgument("Center", EntitySelector.class);
@@ -102,5 +100,12 @@ public class OnRegisterCommands {
                         )
 
         );
+    }
+
+    private static CompletableFuture<Suggestions> suggestAnimationIds(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        ServerLevel level = context.getSource().getLevel();
+        GlobalCameraSavedData storage = GlobalCameraSavedData.getData(level);
+        storage.getPaths().forEach(path -> builder.suggest(path.getId()));
+        return builder.buildFuture();
     }
 }

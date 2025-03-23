@@ -1,24 +1,23 @@
 package cn.anecansaitin.cameraanim.client.gui.screen;
 
-import cn.anecansaitin.cameraanim.InterpolationMath;
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.util.InterpolationMath;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.gui.widget.Bezier;
+import cn.anecansaitin.cameraanim.client.ide.SelectedPoint;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
-import cn.anecansaitin.cameraanim.common.animation.TimeBezierController;
-import cn.anecansaitin.cameraanim.common.animation.TimeInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.TimeBezierController;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.TimeInterpolator;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.gui.widget.ExtendedButton;
-import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector2f;
 
@@ -52,7 +51,7 @@ public class InterpolationSettingScreen extends Screen {
 
     @Override
     protected void init() {
-        CameraAnimIdeCache.SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
+        SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
         CameraKeyframe point = CameraAnimIdeCache.getPath().getPoint(selectedPoint.getPointTime());
 
         if (point == null) {
@@ -194,46 +193,5 @@ public class InterpolationSettingScreen extends Screen {
         Vector2f normalize = vCache1.set(pos2).sub(pos1).normalize();
         buffer.addVertex(pose, pos1.x, pos1.y, 0).setColor(color).setNormal(pose, normalize.x, normalize.y, 0);
         buffer.addVertex(pose, pos2.x, pos2.y, 0).setColor(color).setNormal(pose, normalize.x, normalize.y, 0);
-    }
-
-    private static final class Bezier extends AbstractWidget {
-        private final Vector2f point;
-        private final float zeroX, zeroY;
-
-        private Bezier(Vector2f point, float x, float y) {
-            super((int) (point.x * 80 + x - 2), (int) (point.y * -80 + y - 2), 5, 5, Component.literal("贝塞尔点"));
-            this.point = point;
-            this.zeroX = x;
-            this.zeroY = y;
-        }
-
-        @Override
-        protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            guiGraphics.drawSpecial(b -> {
-                PoseStack.Pose last = guiGraphics.pose().last();
-                VertexConsumer buffer = b.getBuffer(RenderType.GUI);
-                buffer.addVertex(last, point.x * 80 + zeroX + 2, point.y * -80 + zeroY + 2, 0).setColor(0xFFc4c4c4);
-                buffer.addVertex(last, point.x * 80 + zeroX + 2, point.y * -80 + zeroY - 2, 0).setColor(0xFFc4c4c4);
-                buffer.addVertex(last, point.x * 80 + zeroX - 2, point.y * -80 + zeroY - 2, 0).setColor(0xFFc4c4c4);
-                buffer.addVertex(last, point.x * 80 + zeroX - 2, point.y * -80 + zeroY + 2, 0).setColor(0xFFc4c4c4);
-            });
-        }
-
-        @Override
-        protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
-            point.add((float) dragX / 100, (float) -dragY / 100);
-            point.x = Math.clamp(0, 1, point.x);
-            update();
-        }
-
-        @Override
-        protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-
-        }
-
-        public void update() {
-            setX((int) (point.x * 80 + zeroX - 2));
-            setY((int) (point.y * -80 + zeroY - 2));
-        }
     }
 }

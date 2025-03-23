@@ -1,8 +1,8 @@
 package cn.anecansaitin.cameraanim.client.network;
 
-import cn.anecansaitin.cameraanim.client.Animator;
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
-import cn.anecansaitin.cameraanim.client.ClientUtil;
+import cn.anecansaitin.cameraanim.client.animation.Animator;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.util.ClientUtil;
 import cn.anecansaitin.cameraanim.client.gui.screen.RemotePathSearchScreen;
 import cn.anecansaitin.cameraanim.client.gui.screen.InfoScreen;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
@@ -75,6 +75,7 @@ public class ClientPayloadManager {
                 if (succeed && path != null) {
                     Animator.INSTANCE.setPathAndPlay(path);
                     ClientUtil.toThirdView();
+                    ClientUtil.disableBobView();
                 }
             }
         }
@@ -84,6 +85,7 @@ public class ClientPayloadManager {
         if (succeed && path != null && entity != null) {
             Animator.INSTANCE.setPathAndPlay(path, entity.position().toVector3f(), new Vector3f(0, entity.getYRot(), 0));
             ClientUtil.toThirdView();
+            ClientUtil.disableBobView();
         }
     }
 }

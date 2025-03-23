@@ -2,8 +2,8 @@ package cn.anecansaitin.cameraanim.generator.assest;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
 import cn.anecansaitin.cameraanim.client.register.ModKeyMapping;
-import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
-import cn.anecansaitin.cameraanim.common.animation.TimeInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.PathInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.TimeInterpolator;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
@@ -77,6 +77,8 @@ public class ModLangProvider extends LanguageProvider {
         add("gui.camera_anim.remote_path_search.time", "编辑时间", "Time");
         add("gui.camera_anim.remote_path_search.no_server", "服务端未安装“相机大师”", "Server does not install \"Camera Anim\"");
         add("gui.camera_anim.remote_path_search.tip", "Gui 暂未设计完毕，当前为临时措施", "Gui is not designed yet, this is a temporary measure");
+        add("gui.camera_anim.remote_path_search.page_error_positive", "页数必须为正数", "Page must be positive");
+        add("gui.camera_anim.remote_path_search.page_error", "页数不合理", "Invalid page number");
         add("gui.camera_anim.local_path_search.page", "页", "Page");
         add("gui.camera_anim.local_path_search.search", "从本地查询", "Search Local");
         add("gui.camera_anim.local_path_search.load", "加载", "Load");
@@ -96,6 +98,10 @@ public class ModLangProvider extends LanguageProvider {
         add("gui.camera_anim.local_path_search.file_exist_error", "文件不存在", "File Not Exist");
         add("gui.camera_anim.local_path_search.file_save_error", "文件保存失败", "File Save Error");
         add("gui.camera_anim.local_path_search.file_load_success", "文件加载成功", "File Load Success");
+        add("gui.camera_anim.local_path_search.file_delete_error", "文件删除失败", "File Delete Error");
+        add("gui.camera_anim.local_path_search.file_delete_success", "文件删除成功", "File Delete Success");
+        add("gui.camera_anim.local_path_search.delete", "删除", "Delete");
+        add("gui.camera_anim.local_path_search.delete_id", "删除名", "Delete Id");
         add("gui.camera_anim.client_payload_manager.put_global_path_success", "添加路径成功", "Put Global Path Success");
         add("gui.camera_anim.client_payload_manager.put_global_path_failure", "添加路径失败", "Put Global Path Failure");
         add("gui.camera_anim.client_payload_manager.get_global_path_success", "获取路径成功", "Get Global Path Success");

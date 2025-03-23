@@ -1,15 +1,17 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
-import cn.anecansaitin.cameraanim.client.PreviewAnimator;
-import cn.anecansaitin.cameraanim.client.ClientUtil;
+import cn.anecansaitin.cameraanim.client.gui.screen.radial.RadialMenuScreen;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.animation.PreviewAnimator;
+import cn.anecansaitin.cameraanim.client.ide.SelectedPoint;
+import cn.anecansaitin.cameraanim.client.util.ClientUtil;
 import cn.anecansaitin.cameraanim.client.register.ModKeyMapping;
 import cn.anecansaitin.cameraanim.client.gui.screen.RemotePathSearchScreen;
 import cn.anecansaitin.cameraanim.client.gui.screen.PointSettingScreen;
 import cn.anecansaitin.cameraanim.common.animation.CameraKeyframe;
 import cn.anecansaitin.cameraanim.common.animation.GlobalCameraPath;
-import cn.anecansaitin.cameraanim.common.animation.PathInterpolator;
+import cn.anecansaitin.cameraanim.common.animation.interpolation.types.PathInterpolator;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -42,7 +44,7 @@ public class ModKeyClicked {
                 continue;
             }
 
-            CameraAnimIdeCache.SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
+            SelectedPoint selectedPoint = CameraAnimIdeCache.getSelectedPoint();
             int time = selectedPoint.getPointTime();
             GlobalCameraPath track = CameraAnimIdeCache.getPath();
             track.remove(time);
@@ -149,6 +151,14 @@ public class ModKeyClicked {
             }
 
             CameraAnimIdeCache.getPath().setNativeMode(false);
+        }
+
+        while (ModKeyMapping.R_MAP.get().consumeClick()) {
+            if (!CameraAnimIdeCache.EDIT) {
+                continue;
+            }
+
+            Minecraft.getInstance().setScreen(new RadialMenuScreen());
         }
     }
 }

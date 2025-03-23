@@ -1,6 +1,6 @@
-package cn.anecansaitin.cameraanim.common.animation;
+package cn.anecansaitin.cameraanim.common.animation.interpolation;
 
-import cn.anecansaitin.cameraanim.InterpolationMath;
+import cn.anecansaitin.cameraanim.util.InterpolationMath;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import org.joml.Vector3f;

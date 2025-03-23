@@ -1,7 +1,9 @@
 package cn.anecansaitin.cameraanim.client.listener;
 
 import cn.anecansaitin.cameraanim.CameraAnim;
-import cn.anecansaitin.cameraanim.client.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.ide.CameraAnimIdeCache;
+import cn.anecansaitin.cameraanim.client.enums.MoveType;
+import cn.anecansaitin.cameraanim.client.ide.MoveModeData;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -9,7 +11,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import org.lwjgl.glfw.GLFW;
 
-import static cn.anecansaitin.cameraanim.client.ClientUtil.*;
+import static cn.anecansaitin.cameraanim.client.util.ClientUtil.*;
 
 @EventBusSubscriber(modid = CameraAnim.MODID, value = Dist.CLIENT)
 public class MouseInput {
@@ -62,9 +64,9 @@ public class MouseInput {
             case NONE -> {
             }
             case MOVE -> {
-                CameraAnimIdeCache.MoveModeData moveData = CameraAnimIdeCache.getMoveMode();
+                MoveModeData moveData = CameraAnimIdeCache.getMoveMode();
 
-                if (moveData.getMoveType() != CameraAnimIdeCache.MoveType.NONE) {
+                if (moveData.getMoveType() != MoveType.NONE) {
                     moveData.reset();
                 }
             }
