@@ -1,11 +1,11 @@
 package cn.anecansaitin.cameraanim.animation.interpolaty;
 
-import cn.anecansaitin.cameraanim.animation.ITrack;
+import cn.anecansaitin.cameraanim.animation.ITimeSlice;
 import cn.anecansaitin.cameraanim.animation.interpolaty.parameter.IParameterGetter;
 import cn.anecansaitin.cameraanim.animation.interpolaty.parameter.TrackVec3fStepGetter;
 import org.joml.Vector3f;
 
-public class TrackVec3fStepInterpolator implements IInterpolator<ITrack<Vector3f>, Vector3f[], Vector3f> {
+public class TrackVec3fStepInterpolator implements IInterpolator<ITimeSlice<Vector3f>, Vector3f[], Vector3f> {
     public static final TrackVec3fStepInterpolator INSTANCE = new TrackVec3fStepInterpolator();
 
     private TrackVec3fStepInterpolator() {
@@ -17,7 +17,7 @@ public class TrackVec3fStepInterpolator implements IInterpolator<ITrack<Vector3f
     }
 
     @Override
-    public IParameterGetter<ITrack<Vector3f>, Vector3f[]> getParameterGetter() {
+    public IParameterGetter<ITimeSlice<Vector3f>, Vector3f[]> getParameterGetter() {
         return TrackVec3fStepGetter.INSTANCE;
     }
 }

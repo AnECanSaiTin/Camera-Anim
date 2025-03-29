@@ -2,14 +2,14 @@ package cn.anecansaitin.cameraanim.animation;
 
 import cn.anecansaitin.cameraanim.animation.interpolaty.IInterpolator;
 
-public interface IKeyframe<T> {
-    T getInterpolatedValue(int time, float t, Track<T> track, T dest);
+public interface IKeyframe<V> {
+    V getInterpolatedValue(int time, float t, ITimeSlice<V> parent, V dest);
 
-    T getValue();
+    V getValue();
 
-    void setValue(T value);
+    void setValue(V value);
 
-    IInterpolator<Track<T>, T[], T> getInterpolator();
+    IInterpolator<ITimeSlice<V>, V[], V> getInterpolator();
 
-    void setInterpolator(IInterpolator<Track<T>, T[], T> interpolator);
+    void setInterpolator(IInterpolator<ITimeSlice<V>, V[], V> interpolator);
 }

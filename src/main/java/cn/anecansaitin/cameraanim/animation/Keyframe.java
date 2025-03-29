@@ -2,37 +2,37 @@ package cn.anecansaitin.cameraanim.animation;
 
 import cn.anecansaitin.cameraanim.animation.interpolaty.IInterpolator;
 
-public class Keyframe<T> implements IKeyframe<T> {
-    private T value;
-    private IInterpolator<Track<T>, T[], T> interpolator;
+public class Keyframe<V> implements IKeyframe<V> {
+    private V value;
+    private IInterpolator<ITimeSlice<V>, V[], V> interpolator;
 
-    public Keyframe(T value, IInterpolator<Track<T>, T[], T> interpolator) {
+    public Keyframe(V value, IInterpolator<ITimeSlice<V>, V[], V> interpolator) {
         this.value = value;
         this.interpolator = interpolator;
     }
 
     @Override
-    public T getInterpolatedValue(int time, float t, Track<T> track, T dest) {
-        return interpolator.interpolated(t, dest, interpolator.getParameterGetter().getParameters(time, track));
+    public V getInterpolatedValue(int time, float t, ITimeSlice<V> timeSlice, V dest) {
+        return interpolator.interpolated(t, dest, interpolator.getParameterGetter().getParameters(time, timeSlice));
     }
 
     @Override
-    public T getValue() {
+    public V getValue() {
         return value;
     }
 
     @Override
-    public void setValue(T value) {
+    public void setValue(V value) {
         this.value = value;
     }
 
     @Override
-    public IInterpolator<Track<T>, T[], T> getInterpolator() {
+    public IInterpolator<ITimeSlice<V>, V[], V> getInterpolator() {
         return interpolator;
     }
 
     @Override
-    public void setInterpolator(IInterpolator<Track<T>, T[], T> interpolator) {
+    public void setInterpolator(IInterpolator<ITimeSlice<V>, V[], V> interpolator) {
         this.interpolator = interpolator;
     }
 }

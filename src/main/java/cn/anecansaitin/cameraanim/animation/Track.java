@@ -1,90 +1,105 @@
 package cn.anecansaitin.cameraanim.animation;
 
+import cn.anecansaitin.cameraanim.util.IntIntObjectMutTriple;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.TreeMap;
 
 public class Track<T> implements ITrack<T> {
-    private final TreeMap<Integer, IKeyframe<T>> keyframes;
+    /// first 起始时间，second 结束时间，third 时间片
+    private final TreeMap<Integer, IntIntObjectMutTriple<ITimeSlice<T>>> timeSlices;
 
     public Track() {
-        this.keyframes = new TreeMap<>();
+        timeSlices = new TreeMap<>();
     }
 
     @Override
-    @Nullable
-    public T getInterpolatedValue(int time, float t, T dest) {
-        IKeyframe<T> keyframe = getKeyframe(time);
+    public @Nullable T interpolated(int time, float t, T dest) {
+        var timeSlice = getTimeSlice(time);
 
-        if (keyframe == null) {
-            Map.Entry<Integer, IKeyframe<T>> prevKeyframe = getPrevKeyframe(time);
+        if (timeSlice == null) {
+            return null;
+        }
 
-            if (prevKeyframe == null) {
-                Map.Entry<Integer, IKeyframe<T>> next = getNextKeyframe(time);
+        return timeSlice.third().interpolated(time - timeSlice.first(), t, dest);
+    }
 
-                if (next == null) {
-                    return null;
-                }
+    /// 获取指定时间所对应的时间片
+    @Override
+    public @Nullable IntIntObjectMutTriple<ITimeSlice<T>> getTimeSlice(int time) {
+        var current = timeSlices.get(time);
 
-                return next.getValue().getValue();
-            } else {
-                keyframe = prevKeyframe.getValue();
+        if (current != null) {
+            return current;
+        }
+
+        var pre = timeSlices.lowerEntry(time);
+
+        if (pre != null) {
+            var prePair = pre.getValue();
+            int end = prePair.second();
+
+            if (time > end) {
+                return null;
             }
+
+            return prePair;
         }
 
-        if (t == 0) {
-            return keyframe.getValue();
-        }
-
-        return keyframe.getInterpolatedValue(time, t, this, dest);
+        return null;
     }
 
     @Override
-    @Nullable
-    public IKeyframe<T> getKeyframe(int time) {
-        return keyframes.get(time);
-    }
-
-    @Override
-    @Nullable
-    public Map.Entry<Integer, IKeyframe<T>> getPrevKeyframe(int time) {
-        return keyframes.lowerEntry(time);
-    }
-
-    @Override
-    @Nullable
-    public Map.Entry<Integer, IKeyframe<T>> getNextKeyframe(int time) {
-        return keyframes.higherEntry(time);
-    }
-
-    @Override
-    public void putKeyframe(int time, IKeyframe<T> keyframe) {
-        keyframes.put(time, keyframe);
-    }
-
-    @Override
-    public boolean removeKeyframe(int time) {
-        return keyframes.remove(time) != null;
-    }
-
-    @Override
-    public boolean moveKeyframe(int time, int newTime) {
-        if (keyframes.containsKey(newTime)) {
+    public boolean putTimeSlice(int start, int end, ITimeSlice<T> timeSlice) {
+        if (start > end) {
             return false;
         }
 
-        if (keyframes.containsKey(time)) {
-            IKeyframe<T> keyframe = keyframes.remove(time);
-            keyframes.put(newTime, keyframe);
-            return true;
+        var startSlice = getTimeSlice(start);
+
+        if (startSlice != null && startSlice.second() > start) {
+            return false;
         }
 
-        return false;
+        var endSlice = getTimeSlice(end);
+
+        if (endSlice != null && endSlice.first() < end) {
+            return false;
+        }
+
+        timeSlices.put(start, new IntIntObjectMutTriple<>(start, end, timeSlice));
+        return true;
     }
 
     @Override
-    public void clear() {
-        keyframes.clear();
+    public boolean removeTimeSlice(int start) {
+        return timeSlices.remove(start) != null;
+    }
+
+    @Override
+    public boolean moveTimeSlice(int start, int newStart) {
+        var timeSliceTriple = timeSlices.get(start);
+
+        if (timeSliceTriple == null) {
+            return false;
+        }
+
+        var startSlice = getTimeSlice(newStart);
+
+        if (startSlice != null && startSlice.second() > newStart) {
+            return false;
+        }
+
+        var endSlice = getTimeSlice(timeSliceTriple.second() + newStart);
+
+        if (endSlice != null && endSlice.first() < newStart) {
+            return false;
+        }
+
+        timeSliceTriple.first(newStart);
+        timeSliceTriple.second(timeSliceTriple.second() + newStart);
+        timeSlices.remove(start);
+        timeSlices.put(newStart, timeSliceTriple);
+        return true;
     }
 }

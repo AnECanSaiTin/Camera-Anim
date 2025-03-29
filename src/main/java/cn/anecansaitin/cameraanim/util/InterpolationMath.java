@@ -1,4 +1,4 @@
-package cn.anecansaitin.cameraanim.animation.util;
+package cn.anecansaitin.cameraanim.util;
 
 import net.minecraft.util.Mth;
 import org.joml.Vector2f;

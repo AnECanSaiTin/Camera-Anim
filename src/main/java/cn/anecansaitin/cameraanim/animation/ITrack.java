@@ -1,23 +1,16 @@
 package cn.anecansaitin.cameraanim.animation;
 
+import cn.anecansaitin.cameraanim.util.IntIntObjectMutTriple;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
 public interface ITrack<T> {
-    @Nullable T getInterpolatedValue(int time, float t, T dest);
+    T interpolated(int time, float t, T dest);
 
-    @Nullable IKeyframe<T> getKeyframe(int time);
+    @Nullable IntIntObjectMutTriple<ITimeSlice<T>> getTimeSlice(int time);
 
-    @Nullable Map.Entry<Integer, IKeyframe<T>> getPrevKeyframe(int time);
+    boolean putTimeSlice(int start, int end, ITimeSlice<T> timeSlice);
 
-    @Nullable Map.Entry<Integer, IKeyframe<T>> getNextKeyframe(int time);
+    boolean removeTimeSlice(int start);
 
-    void putKeyframe(int time, IKeyframe<T> keyframe);
-
-    boolean removeKeyframe(int time);
-
-    boolean moveKeyframe(int time, int newTime);
-
-    void clear();
+    boolean moveTimeSlice(int start, int newStart);
 }
