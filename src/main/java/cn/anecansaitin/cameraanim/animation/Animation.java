@@ -1,11 +1,39 @@
 package cn.anecansaitin.cameraanim.animation;
 
-import cn.anecansaitin.cameraanim.util.MutFloat;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
 
 public class Animation {
-    private Property<Vector3f> path;
-    private Property<Quaternionf> rotation;
-    private Property<MutFloat> scale;
+    private final HashMap<String, IEffect<?>> effects;
+
+    public Animation () {
+        effects = new HashMap<>();
+    }
+
+    public void animationTick(int time, float t) {
+        for (IEffect<?> effect : effects.values()) {
+            effect.apply(time, t, this);
+        }
+    }
+
+    @Nullable
+    public <T> IEffect<T> getEffect(EffectType<T> type) {
+        IEffect<?> effect = effects.get(type.getId());
+
+        if (effect == null || !type.getType().isAssignableFrom(effect.getType())) {
+            return null;
+        }
+
+        return (IEffect<T>) effect;
+    }
+
+    public <T> boolean addEffect(IEffect<T> effect, EffectType<T> type) {
+        if (effects.containsKey(type.getId())) {
+            return false;
+        }
+
+        effects.put(type.getId(), effect);
+        return true;
+    }
 }

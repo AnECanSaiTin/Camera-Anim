@@ -4,7 +4,7 @@ import cn.anecansaitin.cameraanim.util.IntIntObjectMutTriple;
 import org.jetbrains.annotations.Nullable;
 
 public interface ITrack<T> {
-    T interpolated(int time, float t, T dest);
+    boolean interpolated(int time, float t, T dest);
 
     @Nullable IntIntObjectMutTriple<ITimeSlice<T>> getTimeSlice(int time);
 

@@ -14,11 +14,11 @@ public class Track<T> implements ITrack<T> {
     }
 
     @Override
-    public @Nullable T interpolated(int time, float t, T dest) {
+    public boolean interpolated(int time, float t, T dest) {
         var timeSlice = getTimeSlice(time);
 
         if (timeSlice == null) {
-            return null;
+            return false;
         }
 
         return timeSlice.third().interpolated(time - timeSlice.first(), t, dest);

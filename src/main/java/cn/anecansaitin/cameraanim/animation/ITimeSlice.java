@@ -8,7 +8,7 @@ import java.util.Map;
 /// 其中保存的关键帧时间为相对于时间片段的时间
 /// 如时间片段时间为100-200，关键帧时间为50，则关键帧的实际时间为150
 public interface ITimeSlice<T> {
-    T interpolated(int time, float t, T dest);
+    boolean interpolated(int time, float t, T dest);
 
     @Nullable IKeyframe<T> getKeyframe(int time);
 

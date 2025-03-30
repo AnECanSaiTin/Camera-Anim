@@ -12,8 +12,8 @@ public class Keyframe<V> implements IKeyframe<V> {
     }
 
     @Override
-    public V getInterpolatedValue(int time, float t, ITimeSlice<V> timeSlice, V dest) {
-        return interpolator.interpolated(t, dest, interpolator.getParameterGetter().getParameters(time, timeSlice));
+    public boolean getInterpolatedValue(int time, float t, ITimeSlice<V> timeSlice, V dest) {
+        return interpolator.interpolated(time, t, timeSlice, dest);
     }
 
     @Override

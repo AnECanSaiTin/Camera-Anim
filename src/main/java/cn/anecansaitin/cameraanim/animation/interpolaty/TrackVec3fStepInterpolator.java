@@ -12,8 +12,9 @@ public class TrackVec3fStepInterpolator implements IInterpolator<ITimeSlice<Vect
     }
 
     @Override
-    public Vector3f interpolated(float t, Vector3f dest, Vector3f[] parameters) {
-        return dest.set(parameters[0]);
+    public boolean interpolated(float t, Vector3f dest, Vector3f[] parameters) {
+        dest.set(parameters[0]);
+        return true;
     }
 
     @Override

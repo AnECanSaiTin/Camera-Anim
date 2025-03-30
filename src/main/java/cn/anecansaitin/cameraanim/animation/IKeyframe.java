@@ -3,7 +3,7 @@ package cn.anecansaitin.cameraanim.animation;
 import cn.anecansaitin.cameraanim.animation.interpolaty.IInterpolator;
 
 public interface IKeyframe<V> {
-    V getInterpolatedValue(int time, float t, ITimeSlice<V> parent, V dest);
+    boolean getInterpolatedValue(int time, float t, ITimeSlice<V> parent, V dest);
 
     V getValue();
 

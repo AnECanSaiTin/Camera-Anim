@@ -19,7 +19,7 @@ public class TimeSlice<T> implements ITimeSlice<T> {
     /// @param dest 存储结果的对象
     /// @return 插值后的值，若为null则表示没有关键帧，无法插值
     @Override
-    public @Nullable T interpolated(int time, float t, T dest) {
+    public boolean interpolated(int time, float t, T dest) {
         var keyframe = getKeyframe(time);
 
         if (keyframe == null) {
@@ -29,17 +29,13 @@ public class TimeSlice<T> implements ITimeSlice<T> {
                 var next = getNextKeyframe(time);
 
                 if (next == null) {
-                    return null;
+                    return false;
                 }
 
-                return next.getValue().getValue();
+                keyframe = next.getValue();
             } else {
                 keyframe = prevKeyframe.getValue();
             }
-        }
-
-        if (t == 0) {
-            return keyframe.getValue();
         }
 
         return keyframe.getInterpolatedValue(time, t, this, dest);
