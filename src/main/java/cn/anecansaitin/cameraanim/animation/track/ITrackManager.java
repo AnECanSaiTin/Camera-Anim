@@ -1,11 +1,9 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.track;
 
 import it.unimi.dsi.fastutil.Pair;
 import org.jetbrains.annotations.Nullable;
 
-public interface IEffect<T> {
-    void apply(int time, float t, Animation animation);
-
+public interface ITrackManager<T> {
     boolean interpolated(int time, float t, T dest);
 
     @Nullable
@@ -32,10 +30,4 @@ public interface IEffect<T> {
     boolean moveTrack(int index, int afterIndex);
 
     boolean renameTrack(int index, String name);
-
-    boolean enabled();
-
-    void setEnabled(boolean enabled);
-
-    Class<T> getType();
 }

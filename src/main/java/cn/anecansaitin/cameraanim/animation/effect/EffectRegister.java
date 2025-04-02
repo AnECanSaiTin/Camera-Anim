@@ -1,4 +1,4 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.effect;
 
 import java.util.HashMap;
 

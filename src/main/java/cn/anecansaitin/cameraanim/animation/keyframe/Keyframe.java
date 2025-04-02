@@ -1,18 +1,18 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.keyframe;
 
 import cn.anecansaitin.cameraanim.animation.interpolaty.IInterpolator;
 
-public class Keyframe<V> implements IKeyframe<V> {
+public class Keyframe<V, P> implements IKeyframe<V, P> {
     private V value;
-    private IInterpolator<ITimeSlice<V>, V[], V> interpolator;
+    private IInterpolator<P, V[], V> interpolator;
 
-    public Keyframe(V value, IInterpolator<ITimeSlice<V>, V[], V> interpolator) {
+    public Keyframe(V value, IInterpolator<P, V[], V> interpolator) {
         this.value = value;
         this.interpolator = interpolator;
     }
 
     @Override
-    public boolean getInterpolatedValue(int time, float t, ITimeSlice<V> timeSlice, V dest) {
+    public boolean getInterpolatedValue(int time, float t, P timeSlice, V dest) {
         return interpolator.interpolated(time, t, timeSlice, dest);
     }
 
@@ -27,12 +27,12 @@ public class Keyframe<V> implements IKeyframe<V> {
     }
 
     @Override
-    public IInterpolator<ITimeSlice<V>, V[], V> getInterpolator() {
+    public IInterpolator<P, V[], V> getInterpolator() {
         return interpolator;
     }
 
     @Override
-    public void setInterpolator(IInterpolator<ITimeSlice<V>, V[], V> interpolator) {
+    public void setInterpolator(IInterpolator<P, V[], V> interpolator) {
         this.interpolator = interpolator;
     }
 }

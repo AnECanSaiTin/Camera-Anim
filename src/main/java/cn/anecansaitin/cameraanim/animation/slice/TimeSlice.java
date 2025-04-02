@@ -1,5 +1,6 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.slice;
 
+import cn.anecansaitin.cameraanim.animation.keyframe.IKeyframe;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -7,7 +8,7 @@ import java.util.TreeMap;
 
 public class TimeSlice<T> implements ITimeSlice<T> {
     /// 保存相对于片段的时间与关键帧
-    private final TreeMap<Integer, IKeyframe<T>> keyframes;
+    private final TreeMap<Integer, IKeyframe<T, ITimeSlice<T>>> keyframes;
 
     public TimeSlice() {
         keyframes = new TreeMap<>();
@@ -42,22 +43,22 @@ public class TimeSlice<T> implements ITimeSlice<T> {
     }
 
     @Override
-    public @Nullable IKeyframe<T> getKeyframe(int time) {
+    public @Nullable IKeyframe<T, ITimeSlice<T>> getKeyframe(int time) {
         return keyframes.get(time);
     }
 
     @Override
-    public @Nullable Map.Entry<Integer, IKeyframe<T>> getPrevKeyframe(int time) {
+    public @Nullable Map.Entry<Integer, IKeyframe<T, ITimeSlice<T>>> getPrevKeyframe(int time) {
         return keyframes.floorEntry(time);
     }
 
     @Override
-    public @Nullable Map.Entry<Integer, IKeyframe<T>> getNextKeyframe(int time) {
+    public @Nullable Map.Entry<Integer, IKeyframe<T, ITimeSlice<T>>> getNextKeyframe(int time) {
         return keyframes.ceilingEntry(time);
     }
 
     @Override
-    public void putKeyframe(int time, IKeyframe<T> keyframe) {
+    public void putKeyframe(int time, IKeyframe<T, ITimeSlice<T>> keyframe) {
         keyframes.put(time, keyframe);
     }
 

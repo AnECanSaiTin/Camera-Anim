@@ -1,5 +1,7 @@
 package cn.anecansaitin.cameraanim.animation;
 
+import cn.anecansaitin.cameraanim.animation.effect.EffectType;
+import cn.anecansaitin.cameraanim.animation.effect.IEffect;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;

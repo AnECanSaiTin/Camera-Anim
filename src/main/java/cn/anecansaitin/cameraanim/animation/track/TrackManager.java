@@ -1,25 +1,15 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.track;
 
 import it.unimi.dsi.fastutil.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
-public class Effect<T> implements IEffect<T> {
+public class TrackManager<T> implements ITrackManager<T> {
     private final ArrayList<Pair<String, ITrack<T>>> tracks;
-    private final IEffectApplier onApply;
-    private boolean enabled;
-    private final Class<T> type;
 
-    public Effect(Class<T> type, IEffectApplier onApply) {
-        this.tracks = new ArrayList<>();
-        this.onApply = onApply;
-        this.type = type;
-    }
-
-    @Override
-    public void apply(int time, float t, Animation animation) {
-        onApply.apply(time, t, animation);
+    public TrackManager() {
+        tracks = new ArrayList<>();
     }
 
     @Override
@@ -147,20 +137,5 @@ public class Effect<T> implements IEffect<T> {
 
         tracks.set(index, Pair.of(name, getTrack(index)));
         return true;
-    }
-
-    @Override
-    public boolean enabled() {
-        return enabled;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    @Override
-    public Class<T> getType() {
-        return type;
     }
 }

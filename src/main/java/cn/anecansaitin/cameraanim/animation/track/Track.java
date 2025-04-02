@@ -1,5 +1,6 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.track;
 
+import cn.anecansaitin.cameraanim.animation.slice.ITimeSlice;
 import cn.anecansaitin.cameraanim.util.IntIntObjectMutTriple;
 import org.jetbrains.annotations.Nullable;
 

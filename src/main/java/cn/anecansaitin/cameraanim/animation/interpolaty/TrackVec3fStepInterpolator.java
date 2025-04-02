@@ -1,6 +1,6 @@
 package cn.anecansaitin.cameraanim.animation.interpolaty;
 
-import cn.anecansaitin.cameraanim.animation.ITimeSlice;
+import cn.anecansaitin.cameraanim.animation.slice.ITimeSlice;
 import cn.anecansaitin.cameraanim.animation.interpolaty.parameter.IParameterGetter;
 import cn.anecansaitin.cameraanim.animation.interpolaty.parameter.TrackVec3fStepGetter;
 import org.joml.Vector3f;

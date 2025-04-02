@@ -1,5 +1,6 @@
-package cn.anecansaitin.cameraanim.animation;
+package cn.anecansaitin.cameraanim.animation.slice;
 
+import cn.anecansaitin.cameraanim.animation.keyframe.IKeyframe;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -10,13 +11,13 @@ import java.util.Map;
 public interface ITimeSlice<T> {
     boolean interpolated(int time, float t, T dest);
 
-    @Nullable IKeyframe<T> getKeyframe(int time);
+    @Nullable IKeyframe<T, ITimeSlice<T>> getKeyframe(int time);
 
-    @Nullable Map.Entry<Integer, IKeyframe<T>> getPrevKeyframe(int time);
+    @Nullable Map.Entry<Integer, IKeyframe<T, ITimeSlice<T>>> getPrevKeyframe(int time);
 
-    @Nullable Map.Entry<Integer, IKeyframe<T>> getNextKeyframe(int time);
+    @Nullable Map.Entry<Integer, IKeyframe<T, ITimeSlice<T>>> getNextKeyframe(int time);
 
-    void putKeyframe(int time, IKeyframe<T> keyframe);
+    void putKeyframe(int time, IKeyframe<T, ITimeSlice<T>> keyframe);
 
     boolean removeKeyframe(int time);
 
