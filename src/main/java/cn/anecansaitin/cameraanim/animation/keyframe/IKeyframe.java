@@ -1,6 +1,5 @@
 package cn.anecansaitin.cameraanim.animation.keyframe;
 
-import cn.anecansaitin.cameraanim.animation.slice.ITimeSlice;
 import cn.anecansaitin.cameraanim.animation.interpolaty.IInterpolator;
 
 public interface IKeyframe<V, P> {
