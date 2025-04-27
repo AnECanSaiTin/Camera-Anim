@@ -1,51 +1,83 @@
 package cn.anecansaitin.cameraanim.animation;
 
-import cn.anecansaitin.cameraanim.animation.effect.EffectType;
-import cn.anecansaitin.cameraanim.animation.effect.IEffect;
+import cn.anecansaitin.cameraanim.animation.effect.PathEffect;
+import cn.anecansaitin.cameraanim.animation.effect.type.IEffectType;
+import cn.anecansaitin.cameraanim.animation.effect.IPropertyEffect;
+import cn.anecansaitin.cameraanim.animation.interpolaty.SliceVec3fLineInterpolator;
+import cn.anecansaitin.cameraanim.animation.keyframe.Keyframe;
+import cn.anecansaitin.cameraanim.animation.slice.TimeSlice;
+import cn.anecansaitin.cameraanim.animation.track.ITrackManager;
+import cn.anecansaitin.cameraanim.animation.track.Track;
+import cn.anecansaitin.freecameraapi.CameraModifierManager;
+import cn.anecansaitin.freecameraapi.ICameraModifier;
 import it.unimi.dsi.fastutil.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class Animation {
-    private final ArrayList<Pair<String, IEffect<?>>> effects;
-    private final HashMap<String, IEffect<?>> effectMap;
+    private final ArrayList<Pair<String, IPropertyEffect<?>>> effects;
+    private final HashMap<String, IPropertyEffect<?>> effectMap;
+    private final ICameraModifier camera;
+    private final PathEffect path;
 
     public Animation() {
         effects = new ArrayList<>();
         effectMap = new HashMap<>();
+        camera = CameraModifierManager.createModifier("test", false);
+        path = new PathEffect();
+
+        // test
+        ITrackManager<Vector3f> trackManager = path.getTrackManager();
+        Track<Vector3f> track = new Track<>();
+        trackManager.putTrack("test track", track);
+        TimeSlice<Vector3f> slice = new TimeSlice<>();
+        track.putTimeSlice(0, 20 * 10, slice);
+        slice.putKeyframe(20 * 0, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 1, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 2, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 3, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 4, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 5, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 6, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 7, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 8, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 9, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 10, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
     }
 
     public void animationTick(int time, float t) {
-        for (Pair<String, IEffect<?>> effect : effects) {
-            effect.right().apply(time, t, this);
+        path.apply(time, t, camera);
+
+        for (Pair<String, IPropertyEffect<?>> effect : effects) {
+            effect.right().apply(time, t, camera);
         }
     }
 
     @Nullable
-    public <T> IEffect<T> getEffect(int index, EffectType<T> type) {
+    public <T> IPropertyEffect<T> getEffect(int index, IEffectType<T> type) {
         var effect = effects.get(index);
 
-        if (effect == null || !type.getType().isAssignableFrom(effect.right().getType())) {
+        if (effect.right().getType() != type) {
             return null;
         }
 
-        return (IEffect<T>) effect.right();
+        return (IPropertyEffect<T>) effect.right();
     }
 
-    public <T> IEffect<T> getEffect(String id, EffectType<T> type) {
+    public <T> IPropertyEffect<T> getEffect(String id, IEffectType<T> type) {
         var effect = effectMap.get(id);
 
-        if (effect == null || !type.getType().isAssignableFrom(effect.getType())) {
+        if (effect.getType() != type) {
             return null;
         }
 
-        return (IEffect<T>) effect;
+        return (IPropertyEffect<T>) effect;
     }
 
-    public <T> boolean addEffect(int index, String id, IEffect<T> effect) {
+    public <T> boolean addEffect(int index, String id, IPropertyEffect<T> effect) {
         if (effectMap.containsKey(id)) {
             return false;
         }
@@ -65,7 +97,7 @@ public class Animation {
         return true;
     }
 
-    public <T> boolean addEffect(String id, IEffect<T> effect) {
+    public <T> boolean addEffect(String id, IPropertyEffect<T> effect) {
         return addEffect(effects.size(), id, effect);
     }
 
@@ -87,7 +119,7 @@ public class Animation {
             return false;
         }
 
-        var index = effects.indexOf(Pair.of(id, effect));
+        int index = effects.indexOf(Pair.of(id, effect));
 
         if (index < 0) {
             return false;
@@ -117,7 +149,7 @@ public class Animation {
             return false;
         }
 
-        var index = effects.indexOf(Pair.of(oldId, effect));
+        int index = effects.indexOf(Pair.of(oldId, effect));
 
         if (index < 0) {
             return false;

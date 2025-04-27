@@ -70,12 +70,12 @@ public class TrackManager<T> implements ITrackManager<T> {
     }
 
     @Override
-    public void addTrack(String name, ITrack<T> track) {
+    public void putTrack(String name, ITrack<T> track) {
         tracks.add(Pair.of(name, track));
     }
 
     @Override
-    public void addTrack(int index, String name, ITrack<T> track) {
+    public void putTrack(int index, String name, ITrack<T> track) {
         tracks.add(index, Pair.of(name, track));
     }
 

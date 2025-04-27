@@ -15,9 +15,9 @@ public interface ITrackManager<T> {
     @Nullable
     Pair<String, ITrack<T>> getTrackWithName(int index);
 
-    void addTrack(String name, ITrack<T> track);
+    void putTrack(String name, ITrack<T> track);
 
-    void addTrack(int index, String name, ITrack<T> track);
+    void putTrack(int index, String name, ITrack<T> track);
 
     void removeTrack(int index);
 

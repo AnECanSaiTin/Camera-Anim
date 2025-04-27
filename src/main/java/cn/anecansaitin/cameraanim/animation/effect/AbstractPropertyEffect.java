@@ -1,10 +1,12 @@
 package cn.anecansaitin.cameraanim.animation.effect;
 
-public abstract class AbstractEffect<T> implements IEffect<T>{
-    private boolean enabled;
-    private final Class<T> type;
+import cn.anecansaitin.cameraanim.animation.effect.type.IEffectType;
 
-    public AbstractEffect(Class<T> type) {
+public abstract class AbstractPropertyEffect<T> implements IPropertyEffect<T> {
+    private boolean enabled;
+    private final IEffectType<T> type;
+
+    public AbstractPropertyEffect(IEffectType<T> type) {
         enabled = true;
         this.type = type;
     }
@@ -20,7 +22,7 @@ public abstract class AbstractEffect<T> implements IEffect<T>{
     }
 
     @Override
-    public Class<T> getType() {
+    public IEffectType<T> getType() {
         return type;
     }
 }
