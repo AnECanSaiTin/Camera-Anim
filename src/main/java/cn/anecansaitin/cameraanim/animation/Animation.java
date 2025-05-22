@@ -35,17 +35,15 @@ public class Animation {
         trackManager.putTrack("test track", track);
         TimeSlice<Vector3f> slice = new TimeSlice<>();
         track.putTimeSlice(0, 20 * 10, slice);
-        slice.putKeyframe(20 * 0, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 1, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 2, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 3, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 4, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 5, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 6, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 7, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 8, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 9, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
-        slice.putKeyframe(20 * 10, new Keyframe<>(new Vector3f(0, 0, 0), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 0, new Keyframe<>(new Vector3f(6, 56, 8), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 1, new Keyframe<>(new Vector3f(6, 56, 10), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 2, new Keyframe<>(new Vector3f(12, 56, 8), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 3, new Keyframe<>(new Vector3f(6, 57, 8), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 4, new Keyframe<>(new Vector3f(6, 57, 10), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 5, new Keyframe<>(new Vector3f(12, 57, 8), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 6, new Keyframe<>(new Vector3f(6, 58, 8), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 7, new Keyframe<>(new Vector3f(6, 58, 10), new SliceVec3fLineInterpolator()));
+        slice.putKeyframe(20 * 8, new Keyframe<>(new Vector3f(12, 58, 8), new SliceVec3fLineInterpolator()));
     }
 
     public void animationTick(int time, float t) {
