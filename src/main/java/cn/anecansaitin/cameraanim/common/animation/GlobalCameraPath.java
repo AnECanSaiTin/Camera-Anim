@@ -294,6 +294,13 @@ public class GlobalCameraPath {
             Vector3f pos1 = matrix3f.transform(keyframe.getPos());
             pos1.add(pos);
             keyframe.getRot().add(0, yRot, 0);
+
+            if (keyframe.getPathInterpolator() == PathInterpolator.BEZIER) {
+                Vector3f left = matrix3f.transform(keyframe.getPathBezier().getLeft());
+                Vector3f right = matrix3f.transform(keyframe.getPathBezier().getRight());
+                left.add(pos);
+                right.add(pos);
+            }
         }
 
        return new GlobalCameraPath(map, id, version, lastModifier, true);

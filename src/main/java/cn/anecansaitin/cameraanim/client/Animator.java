@@ -91,88 +91,81 @@ public class Animator {
         float partialTicks = isPlaying() ? partialTicks() : 0;
         Map.Entry<Integer, CameraKeyframe> current = path.getEntry(time);
 
-        if (current == null || partialTicks != 0) {
-            // 当前不处于关键帧上
-            Map.Entry<Integer, CameraKeyframe> preEntry = path.getPreEntry(time);
-            Map.Entry<Integer, CameraKeyframe> nextEntry = path.getNextEntry(time);
-            float t;
+        Map.Entry<Integer, CameraKeyframe> preEntry = current == null ? path.getPreEntry(time) : current;
+        Map.Entry<Integer, CameraKeyframe> nextEntry = path.getNextEntry(time);
+        float t;
 
-            if (preEntry == null) {
-                if (nextEntry == null) return false;
-                posDest.set(nextEntry.getValue().getPos());
-                rotDest.set(nextEntry.getValue().getRot());
+        if (preEntry == null) {
+            if (nextEntry == null) return false;
+            posDest.set(nextEntry.getValue().getPos());
+            rotDest.set(nextEntry.getValue().getRot());
+            return true;
+        } else {
+            if (nextEntry == null) {
+                posDest.set(preEntry.getValue().getPos());
+                rotDest.set(preEntry.getValue().getRot());
                 return true;
             } else {
-                if (nextEntry == null) {
-                    posDest.set(preEntry.getValue().getPos());
-                    rotDest.set(preEntry.getValue().getRot());
-                    return true;
-                } else {
-                    t = (partialTicks + time - preEntry.getKey()) / (nextEntry.getKey() - preEntry.getKey());
-                }
+                t = (partialTicks + time - preEntry.getKey()) / (nextEntry.getKey() - preEntry.getKey());
             }
-
-            CameraKeyframe pre = preEntry.getValue();
-            CameraKeyframe next = nextEntry.getValue();
-
-            float t1;
-            // 坐标插值
-            if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
-                t1 = next.getPosBezier().interpolate(t);
-            } else {
-                t1 = t;
-            }
-
-            switch (next.getPathInterpolator()) {
-                case LINEAR -> line(t1, pre.getPos(), next.getPos(), posDest);
-                case SMOOTH -> {
-                    Vector3f p0, p3;
-                    Map.Entry<Integer, CameraKeyframe> prePre = path.getPreEntry(preEntry.getKey());
-
-                    if (prePre == null) {
-                        p0 = pre.getPos();
-                    } else {
-                        p0 = prePre.getValue().getPos();
-                    }
-
-                    Map.Entry<Integer, CameraKeyframe> nextNext = path.getNextEntry(nextEntry.getKey());
-
-                    if (nextNext == null) {
-                        p3 = next.getPos();
-                    } else {
-                        p3 = nextNext.getValue().getPos();
-                    }
-
-                    catmullRom(t1, p0, pre.getPos(), next.getPos(), p3, posDest);
-                }
-                case BEZIER -> next.getPathBezier().interpolate(t1, pre.getPos(), next.getPos(), posDest);
-                case STEP -> posDest.set(pre.getPos());
-            }
-
-            // 旋转插值
-            if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
-                t1 = next.getRotBezier().interpolate(t);
-            } else {
-                t1 = t;
-            }
-
-            Vector3f preRot = pre.getRot();
-            Vector3f nextRot = next.getRot();
-            line(t1, preRot, nextRot, rotDest);
-
-            // fov插值
-            if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
-                t1 = next.getRotBezier().interpolate(t);
-            } else {
-                t1 = t;
-            }
-
-            fov[0] = Mth.lerp(t1, pre.getFov(), next.getFov());
-        } else {
-            posDest.set(current.getValue().getPos());
-            rotDest.set(current.getValue().getRot());
-            fov[0] = current.getValue().getFov();
         }
+
+        CameraKeyframe pre = preEntry.getValue();
+        CameraKeyframe next = nextEntry.getValue();
+
+        float t1;
+        // 坐标插值
+        if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
+            t1 = next.getPosBezier().interpolate(t);
+        } else {
+            t1 = t;
+        }
+
+        switch (next.getPathInterpolator()) {
+            case LINEAR -> line(t1, pre.getPos(), next.getPos(), posDest);
+            case SMOOTH -> {
+                Vector3f p0, p3;
+                Map.Entry<Integer, CameraKeyframe> prePre = path.getPreEntry(preEntry.getKey());
+
+                if (prePre == null) {
+                    p0 = pre.getPos();
+                } else {
+                    p0 = prePre.getValue().getPos();
+                }
+
+                Map.Entry<Integer, CameraKeyframe> nextNext = path.getNextEntry(nextEntry.getKey());
+
+                if (nextNext == null) {
+                    p3 = next.getPos();
+                } else {
+                    p3 = nextNext.getValue().getPos();
+                }
+
+                catmullRom(t1, p0, pre.getPos(), next.getPos(), p3, posDest);
+            }
+            case BEZIER -> next.getPathBezier().interpolate(t1, pre.getPos(), next.getPos(), posDest);
+            case STEP -> posDest.set(pre.getPos());
+        }
+
+        // 旋转插值
+        if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
+            t1 = next.getRotBezier().interpolate(t);
+        } else {
+            t1 = t;
+        }
+
+        Vector3f preRot = pre.getRot();
+        Vector3f nextRot = next.getRot();
+        line(t1, preRot, nextRot, rotDest);
+
+        // fov插值
+        if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
+            t1 = next.getRotBezier().interpolate(t);
+        } else {
+            t1 = t;
+        }
+
+        fov[0] = Mth.lerp(t1, pre.getFov(), next.getFov());
 
         if (path.isNativeMode()) {
             rotationMatrix.transform(posDest).add(center);
