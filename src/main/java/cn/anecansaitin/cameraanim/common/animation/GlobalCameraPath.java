@@ -197,6 +197,11 @@ public class GlobalCameraPath {
         return keyframes.higherEntry(time);
     }
 
+    @Nullable
+    public Map.Entry<Integer, CameraKeyframe> getEntry(int time) {
+        return keyframes.floorEntry(time);
+    }
+
     public int getLength() {
         return keyframes.lastKey();
     }
@@ -266,6 +271,15 @@ public class GlobalCameraPath {
             Vector3f pos1 = keyframe.getPos().sub(pos);
             matrix3f.transform(pos1);
             keyframe.getRot().sub(0, yRot, 0);
+
+            if (keyframe.getPathInterpolator() == PathInterpolator.BEZIER) {
+                Vector3f left = keyframe.getPathBezier().getLeft();
+                Vector3f right = keyframe.getPathBezier().getRight();
+                left.sub(pos);
+                matrix3f.transform(left);
+                right.sub(pos);
+                matrix3f.transform(right);
+            }
         }
 
         return new GlobalCameraPath(map, id, version, lastModifier, true);

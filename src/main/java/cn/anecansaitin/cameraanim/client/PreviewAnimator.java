@@ -70,11 +70,11 @@ public class PreviewAnimator {
     public boolean prepareCameraInfo(Vector3f posDest, Vector3f rotDest, float[] fov) {
         float partialTicks = isPlaying() ? partialTicks() : 0;
         GlobalCameraPath track = CameraAnimIdeCache.getPath();
-        CameraKeyframe current = track.getPoint(time);
+        Map.Entry<Integer, CameraKeyframe> current = track.getEntry(time);
 
-        if (current == null) {
+        if (current == null || partialTicks != 0) {
             // 当前不处于关键帧上
-            Map.Entry<Integer, CameraKeyframe> preEntry = track.getPreEntry(time);
+            Map.Entry<Integer, CameraKeyframe> preEntry = current == null ? track.getPreEntry(time) : current;
             Map.Entry<Integer, CameraKeyframe> nextEntry = track.getNextEntry(time);
             float t;
 
@@ -150,9 +150,9 @@ public class PreviewAnimator {
 
             fov[0] = Mth.lerp(t1, pre.getFov(), next.getFov());
         } else {
-            posDest.set(current.getPos());
-            rotDest.set(current.getRot());
-            fov[0] = current.getFov();
+            posDest.set(current.getValue().getPos());
+            rotDest.set(current.getValue().getRot());
+            fov[0] = current.getValue().getFov();
         }
 
         return true;

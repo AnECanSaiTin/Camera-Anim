@@ -89,9 +89,9 @@ public class Animator {
         }
 
         float partialTicks = isPlaying() ? partialTicks() : 0;
-        CameraKeyframe current = path.getPoint(time);
+        Map.Entry<Integer, CameraKeyframe> current = path.getEntry(time);
 
-        if (current == null) {
+        if (current == null || partialTicks != 0) {
             // 当前不处于关键帧上
             Map.Entry<Integer, CameraKeyframe> preEntry = path.getPreEntry(time);
             Map.Entry<Integer, CameraKeyframe> nextEntry = path.getNextEntry(time);
@@ -169,9 +169,9 @@ public class Animator {
 
             fov[0] = Mth.lerp(t1, pre.getFov(), next.getFov());
         } else {
-            posDest.set(current.getPos());
-            rotDest.set(current.getRot());
-            fov[0] = current.getFov();
+            posDest.set(current.getValue().getPos());
+            rotDest.set(current.getValue().getRot());
+            fov[0] = current.getValue().getFov();
         }
 
         if (path.isNativeMode()) {
