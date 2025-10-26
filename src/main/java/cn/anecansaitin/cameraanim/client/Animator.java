@@ -29,7 +29,7 @@ public class Animator {
             return;
         }
 
-        if (time > path.getLength()) {
+        if (time >= path.getLength()) {
             reset();
         } else {
             time++;
@@ -99,11 +99,24 @@ public class Animator {
             if (nextEntry == null) return false;
             posDest.set(nextEntry.getValue().getPos());
             rotDest.set(nextEntry.getValue().getRot());
+            fov[0] = nextEntry.getValue().getFov();
+
+            if (path.isNativeMode()) {
+                rotationMatrix.transform(posDest).add(center);
+                rotDest.add(rotation);
+            }
             return true;
         } else {
             if (nextEntry == null) {
                 posDest.set(preEntry.getValue().getPos());
                 rotDest.set(preEntry.getValue().getRot());
+                fov[0] = preEntry.getValue().getFov();
+
+                if (path.isNativeMode()) {
+                    rotationMatrix.transform(posDest).add(center);
+                    rotDest.add(rotation);
+                }
+
                 return true;
             } else {
                 t = (partialTicks + time - preEntry.getKey()) / (nextEntry.getKey() - preEntry.getKey());
@@ -113,17 +126,28 @@ public class Animator {
         CameraKeyframe pre = preEntry.getValue();
         CameraKeyframe next = nextEntry.getValue();
 
-        float t1;
-        // 坐标插值
+        float tp, tr, tf;
         if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
-            t1 = next.getPosBezier().interpolate(t);
+            tp = next.getPosBezier().interpolate(t);
+            tr = next.getRotBezier().interpolate(t);
+            tf = next.getFovBezier().interpolate(t);
         } else {
-            t1 = t;
+            tp = t;
+            tr = t;
+            tf = t;
         }
 
         switch (next.getPathInterpolator()) {
-            case LINEAR -> line(t1, pre.getPos(), next.getPos(), posDest);
+            case LINEAR -> {
+                // 坐标
+                line(tp, pre.getPos(), next.getPos(), posDest);
+                // 旋转
+                line(tr, pre.getRot(), next.getRot(), rotDest);
+                // fov
+                fov[0] = Mth.lerp(tf, pre.getFov(), next.getFov());
+            }
             case SMOOTH -> {
+                // 坐标
                 Vector3f p0, p3;
                 Map.Entry<Integer, CameraKeyframe> prePre = path.getPreEntry(preEntry.getKey());
 
@@ -141,31 +165,28 @@ public class Animator {
                     p3 = nextNext.getValue().getPos();
                 }
 
-                catmullRom(t1, p0, pre.getPos(), next.getPos(), p3, posDest);
+                catmullRom(tp, p0, pre.getPos(), next.getPos(), p3, posDest);
+
+                // 旋转
+                line(tr, pre.getRot(), next.getRot(), rotDest);
+                // fov
+                fov[0] = Mth.lerp(tf, pre.getFov(), next.getFov());
             }
-            case BEZIER -> next.getPathBezier().interpolate(t1, pre.getPos(), next.getPos(), posDest);
-            case STEP -> posDest.set(pre.getPos());
+            case BEZIER -> {
+                // 坐标
+                next.getPathBezier().interpolate(tp, pre.getPos(), next.getPos(), posDest);
+                // 旋转
+                line(tr, pre.getRot(), next.getRot(), rotDest);
+                // fov
+                fov[0] = Mth.lerp(tf, pre.getFov(), next.getFov());
+            }
+            case STEP -> {
+                // 坐标
+                posDest.set(pre.getPos());
+                rotDest.set(pre.getRot());
+                fov[0] = pre.getFov();
+            }
         }
-
-        // 旋转插值
-        if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
-            t1 = next.getRotBezier().interpolate(t);
-        } else {
-            t1 = t;
-        }
-
-        Vector3f preRot = pre.getRot();
-        Vector3f nextRot = next.getRot();
-        line(t1, preRot, nextRot, rotDest);
-
-        // fov插值
-        if (next.getPosTimeInterpolator() == TimeInterpolator.BEZIER) {
-            t1 = next.getRotBezier().interpolate(t);
-        } else {
-            t1 = t;
-        }
-
-        fov[0] = Mth.lerp(t1, pre.getFov(), next.getFov());
 
         if (path.isNativeMode()) {
             rotationMatrix.transform(posDest).add(center);

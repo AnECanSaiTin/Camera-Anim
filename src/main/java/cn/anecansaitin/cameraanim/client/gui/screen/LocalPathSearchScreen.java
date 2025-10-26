@@ -160,12 +160,19 @@ public class LocalPathSearchScreen extends Screen {
     }
 
     private void saveToFile(String id) {
-        Path path = FMLPaths.GAMEDIR.get().resolve("camera-anim").resolve(id + ".json");
+        Path animDirectory = FMLPaths.GAMEDIR.get().resolve("camera-anim");
+        Path path = animDirectory.resolve(id + ".json");
+
         try {
             JsonObject json = GSON.fromJson(CameraAnimIdeCache.getPath().toJsonString(GSON), JsonObject.class);
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("version", SERIALIZER_VERSION);
             jsonObject.add("anim", json);
+
+            if (!Files.isDirectory(animDirectory)) {
+                Files.createDirectories(animDirectory);
+            }
+
             Files.writeString(path, jsonObject.toString());
         } catch (IOException e) {
             ClientUtil.pushGuiLayer(new InfoScreen(FILE_SAVE_ERROR));

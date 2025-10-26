@@ -151,6 +151,7 @@ public class OnLevelRender {
         }
 
         if (!animator.prepareCameraInfo(PLAYER_POS, PLAYER_ROT, PLAYER_FOV)) {
+            PLAYER_MODIFIER.disable();
             return;
         }
 
