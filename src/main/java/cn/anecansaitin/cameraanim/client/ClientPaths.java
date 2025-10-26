@@ -9,6 +9,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +37,11 @@ public class ClientPaths {
                     };
                     TreeMap<Integer, CameraKeyframe> map = GSON.fromJson(jsonObject.get("anim"), type.getType());
                     GlobalCameraPath anim = new GlobalCameraPath(map, fileName.replace(".json", ""));
+
+                    if (jsonObject.has("native") && jsonObject.get("native").getAsBoolean()) {
+                        anim.setNativeMode(true);
+                    }
+
                     PATHS.put(anim.getId(), anim);
                 } catch (IOException | JsonSyntaxException e) {
 
@@ -69,7 +75,29 @@ public class ClientPaths {
             return;
         }
 
+        if (anim.isNativeMode()) {
+            ClientUtil.pushGuiLayer(new InfoScreen("The anim \"" + id + "\" is native mode"));
+            return;
+        }
+
         Animator.INSTANCE.setPathAndPlay(anim);
+        ClientUtil.toThirdView();
+    }
+
+    public static void play(String id, Vector3f center, float yRot) {
+        GlobalCameraPath anim = PATHS.get(id);
+
+        if (anim == null) {
+            ClientUtil.pushGuiLayer(new InfoScreen("Anim \"" + id + "\" not found"));
+            return;
+        }
+
+        if (!anim.isNativeMode()) {
+            ClientUtil.pushGuiLayer(new InfoScreen("The anim \"" + id + "\" is not native mode"));
+            return;
+        }
+
+        Animator.INSTANCE.setPathAndPlay(anim, center, new Vector3f(0, yRot, 0));
         ClientUtil.toThirdView();
     }
 }

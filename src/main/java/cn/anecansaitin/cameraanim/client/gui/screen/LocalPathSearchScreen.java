@@ -16,6 +16,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.client.gui.widget.ExtendedButton;
 import net.minecraftforge.fml.loading.FMLPaths;
+import org.joml.Vector3f;
 import oshi.util.tuples.Triplet;
 
 import java.io.File;
@@ -144,7 +145,15 @@ public class LocalPathSearchScreen extends Screen {
                 if (jsonObject.has("version") && jsonObject.get("version").getAsString().equals(SERIALIZER_VERSION)) {
                     TypeToken<TreeMap<Integer, CameraKeyframe>> type = new TypeToken<>(){};
                     TreeMap<Integer, CameraKeyframe> map = GSON.fromJson(jsonObject.get("anim"), type.getType());
-                    CameraAnimIdeCache.setPath(new GlobalCameraPath(map, id));
+                    GlobalCameraPath animPath = new GlobalCameraPath(map, id);
+
+                    if (jsonObject.has("native") && jsonObject.get("native").getAsBoolean()) {
+                        Vector3f center = ClientUtil.player().position().toVector3f();
+                        animPath = animPath.fromNative(center, ClientUtil.playerYHeadRot());
+                        CameraAnimIdeCache.setNative(center, new Vector3f(0, ClientUtil.playerYHeadRot(), 0));
+                    }
+
+                    CameraAnimIdeCache.setPath(animPath);
                     ClientUtil.pushGuiLayer(new InfoScreen(FILE_LOAD_SUCCESS));
                 } else {
                     ClientUtil.pushGuiLayer(new InfoScreen(VERSION_ERROR));
@@ -164,8 +173,15 @@ public class LocalPathSearchScreen extends Screen {
         Path path = animDirectory.resolve(id + ".json");
 
         try {
-            JsonObject json = GSON.fromJson(CameraAnimIdeCache.getPath().toJsonString(GSON), JsonObject.class);
+            GlobalCameraPath animPath = CameraAnimIdeCache.getPath();
             JsonObject jsonObject = new JsonObject();
+
+            if (animPath.isNativeMode()) {
+                animPath = animPath.toNative(CameraAnimIdeCache.getNativePos(), CameraAnimIdeCache.getNativeRot().y);
+                jsonObject.addProperty("native", true);
+            }
+
+            JsonObject json = GSON.fromJson(animPath.toJsonString(GSON), JsonObject.class);
             jsonObject.addProperty("version", SERIALIZER_VERSION);
             jsonObject.add("anim", json);
 
@@ -174,6 +190,7 @@ public class LocalPathSearchScreen extends Screen {
             }
 
             Files.writeString(path, jsonObject.toString());
+            ClientUtil.pushGuiLayer(new InfoScreen("Save successes!"));
         } catch (IOException e) {
             ClientUtil.pushGuiLayer(new InfoScreen(FILE_SAVE_ERROR));
         }
